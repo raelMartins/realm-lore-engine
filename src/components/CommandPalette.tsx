@@ -1,17 +1,27 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LorePin } from "@/types/world";
+import { LorePin, RealmSide } from "@/types/world";
 import { Search, MapPin, X, CornerDownLeft } from "lucide-react";
 
 interface CommandPaletteProps {
   pins: LorePin[];
   onSelectPin: (pin: LorePin) => void;
+  realmLabels?: {
+    adventurer?: string;
+    company?: string;
+  };
 }
+
+const DEFAULT_LABELS: Record<RealmSide, string> = {
+  adventurer: "Adventurer's Reach",
+  company: "Guild Shore",
+};
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   pins,
   onSelectPin,
+  realmLabels,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -36,9 +46,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       ? pins
       : pins.filter((pin) => {
           const searchText =
-            `${pin.title} ${pin.subtitle} ${pin.content.tags?.join(" ") || ""}`.toLowerCase();
+            `${pin.title} ${pin.subtitle} ${pin.realm} ${pin.content.tags?.join(" ") || ""}`.toLowerCase();
           return searchText.includes(query.toLowerCase());
         });
+
+  const grouped: { realm: RealmSide; label: string; pins: LorePin[] }[] = (
+    ["adventurer", "company"] as RealmSide[]
+  )
+    .map((realm) => ({
+      realm,
+      label: realmLabels?.[realm] || DEFAULT_LABELS[realm],
+      pins: filteredPins.filter((p) => p.realm === realm),
+    }))
+    .filter((g) => g.pins.length > 0);
 
   if (!isOpen) {
     return (
@@ -80,35 +100,42 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         <div className="max-h-80 overflow-y-auto p-2">
-          {filteredPins.length === 0 ? (
+          {grouped.length === 0 ? (
             <p className="py-8 text-center text-xs text-realm-silver-muted">
               No matching lore nodes found.
             </p>
           ) : (
-            filteredPins.map((pin) => (
-              <button
-                key={pin.id}
-                type="button"
-                onClick={() => {
-                  onSelectPin(pin);
-                  setIsOpen(false);
-                  setQuery("");
-                }}
-                className="group flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition-all hover:border-realm-teal/25 hover:bg-white/5"
-              >
-                <div className="glass-btn rounded-2xl p-2.5 text-realm-teal transition-colors group-hover:border-realm-teal/40 group-hover:text-realm-teal-soft">
-                  <MapPin className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-realm-silver">
-                    {pin.title}
-                  </p>
-                  <p className="mt-0.5 text-xs text-realm-silver-muted">
-                    {pin.subtitle}
-                  </p>
-                </div>
-                <CornerDownLeft className="mt-1 h-3.5 w-3.5 shrink-0 text-realm-silver-muted opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
+            grouped.map((group) => (
+              <div key={group.realm} className="mb-2">
+                <p className="px-3 py-2 font-display text-[10px] font-semibold uppercase tracking-[0.14em] text-realm-teal-soft">
+                  {group.label}
+                </p>
+                {group.pins.map((pin) => (
+                  <button
+                    key={pin.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectPin(pin);
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
+                    className="group flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition-all hover:border-realm-teal/25 hover:bg-white/5"
+                  >
+                    <div className="glass-btn rounded-2xl p-2.5 text-realm-teal transition-colors group-hover:border-realm-teal/40 group-hover:text-realm-teal-soft">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-realm-silver">
+                        {pin.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-realm-silver-muted">
+                        {pin.subtitle}
+                      </p>
+                    </div>
+                    <CornerDownLeft className="mt-1 h-3.5 w-3.5 shrink-0 text-realm-silver-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                ))}
+              </div>
             ))
           )}
         </div>

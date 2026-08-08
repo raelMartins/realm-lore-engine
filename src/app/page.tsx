@@ -5,18 +5,27 @@ import { getCompanyData } from "@/lib/getCompanyData";
 import { MapCanvas } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
 import { CommandPalette } from "@/components/CommandPalette";
-import { LorePin } from "@/types/world";
+import { RealmOverview } from "@/components/RealmOverview";
+import { LorePin, RealmSide } from "@/types/world";
 import { soundFx } from "@/lib/audio";
 import { Volume2, VolumeX } from "lucide-react";
 
 export default function Home() {
   const worldData = getCompanyData();
   const [selectedPin, setSelectedPin] = useState<LorePin | null>(null);
+  const [selectedRealm, setSelectedRealm] = useState<RealmSide | null>(null);
   const [isMuted, setIsMuted] = useState(false);
 
   const handleSelectPin = (pin: LorePin) => {
     soundFx.playSelectSound();
+    setSelectedRealm(null);
     setSelectedPin(pin);
+  };
+
+  const handleSelectRealm = (realm: RealmSide) => {
+    soundFx.playHoverSound();
+    setSelectedPin(null);
+    setSelectedRealm(realm);
   };
 
   const handleToggleMute = () => {
@@ -26,7 +35,11 @@ export default function Home() {
 
   return (
     <main className="realm-atmosphere relative h-screen w-full overflow-hidden">
-      <CommandPalette pins={worldData.pins} onSelectPin={handleSelectPin} />
+      <CommandPalette
+        pins={worldData.pins}
+        onSelectPin={handleSelectPin}
+        realmLabels={worldData.realmLabels}
+      />
 
       <div className="pointer-events-none absolute top-6 right-6 z-30 flex items-center gap-3">
         <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
@@ -54,7 +67,16 @@ export default function Home() {
         data={worldData}
         selectedPinId={selectedPin?.id || null}
         onSelectPin={handleSelectPin}
+        selectedRealm={selectedRealm}
+        onSelectRealm={handleSelectRealm}
         mapImageUrl="/maps/realm-map.png"
+      />
+
+      <RealmOverview
+        realm={selectedRealm}
+        data={worldData}
+        onClose={() => setSelectedRealm(null)}
+        onSelectPin={handleSelectPin}
       />
 
       <LoreDrawer pin={selectedPin} onClose={() => setSelectedPin(null)} />

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LorePin } from "@/types/world";
+import { LorePin, RealmSide } from "@/types/world";
 
 interface QuestTrailProps {
   pins: LorePin[];
@@ -28,7 +28,6 @@ function buildQuestPath(pins: LorePin[]): string {
     const my = (a.y + b.y) / 2;
     const dx = b.x - a.x;
     const dy = b.y - a.y;
-    // Alternate curve direction so the route feels organic
     const side = i % 2 === 0 ? 1 : -1;
     const bend = 0.22;
     const cx = mx - dy * bend * side;
@@ -39,10 +38,68 @@ function buildQuestPath(pins: LorePin[]): string {
   return d;
 }
 
-export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
-  const pathD = buildQuestPath(pins);
+const REALM_TRAIL: Record<
+  RealmSide,
+  { glow: string; gradientId: string; stops: [string, string, string] }
+> = {
+  adventurer: {
+    glow: "rgba(45, 212, 191, 0.3)",
+    gradientId: "quest-trail-adventurer",
+    stops: ["#5eead4", "#2dd4bf", "#99f6e4"],
+  },
+  company: {
+    glow: "rgba(245, 158, 11, 0.28)",
+    gradientId: "quest-trail-company",
+    stops: ["#e8eef2", "#f59e0b", "#5eead4"],
+  },
+};
 
+function RealmPath({
+  pins,
+  realm,
+}: {
+  pins: LorePin[];
+  realm: RealmSide;
+}) {
+  const pathD = buildQuestPath(pins);
   if (!pathD) return null;
+
+  const style = REALM_TRAIL[realm];
+
+  return (
+    <g>
+      <path
+        d={pathD}
+        fill="none"
+        stroke={style.glow}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        filter="url(#quest-trail-glow)"
+      />
+      <path
+        d={pathD}
+        fill="none"
+        stroke={`url(#${style.gradientId})`}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        className="animate-quest-trail"
+      />
+    </g>
+  );
+}
+
+/**
+ * Dual-realm quest trails — one route per island, same 0–100 map space.
+ */
+export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
+  const adventurerPins = pins.filter((p) => p.realm === "adventurer");
+  const companyPins = pins.filter((p) => p.realm === "company");
+
+  if (adventurerPins.length < 2 && companyPins.length < 2) return null;
 
   return (
     <svg
@@ -53,15 +110,36 @@ export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
     >
       <defs>
         <linearGradient
-          id="quest-trail-stroke"
+          id={REALM_TRAIL.adventurer.gradientId}
+          x1="0%"
+          y1="0%"
+          x2="0%"
+          y2="100%"
+        >
+          {REALM_TRAIL.adventurer.stops.map((color, i) => (
+            <stop
+              key={color}
+              offset={`${(i / 2) * 100}%`}
+              stopColor={color}
+              stopOpacity={0.75}
+            />
+          ))}
+        </linearGradient>
+        <linearGradient
+          id={REALM_TRAIL.company.gradientId}
           x1="0%"
           y1="0%"
           x2="100%"
           y2="100%"
         >
-          <stop offset="0%" stopColor="#5eead4" stopOpacity="0.35" />
-          <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.85" />
-          <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.55" />
+          {REALM_TRAIL.company.stops.map((color, i) => (
+            <stop
+              key={color}
+              offset={`${(i / 2) * 100}%`}
+              stopColor={color}
+              stopOpacity={0.8}
+            />
+          ))}
         </linearGradient>
         <filter
           id="quest-trail-glow"
@@ -78,29 +156,8 @@ export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
         </filter>
       </defs>
 
-      {/* Soft under-glow path */}
-      <path
-        d={pathD}
-        fill="none"
-        stroke="rgba(245, 158, 11, 0.28)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        filter="url(#quest-trail-glow)"
-      />
-
-      {/* Animated dashed quest trail — dasharray/animation from CSS */}
-      <path
-        d={pathD}
-        fill="none"
-        stroke="url(#quest-trail-stroke)"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        className="animate-quest-trail"
-      />
+      <RealmPath pins={adventurerPins} realm="adventurer" />
+      <RealmPath pins={companyPins} realm="company" />
     </svg>
   );
 };
