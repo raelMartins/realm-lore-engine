@@ -10,7 +10,6 @@ import { CompanyLoreConfig, LorePin } from "@/types/world";
 import * as Icons from "lucide-react";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { soundFx } from "@/lib/audio";
-import { QuestTrail } from "@/components/QuestTrail";
 import { RealmHitLayer } from "@/components/RealmHitLayer";
 import {
   MAP_STAGE_SIZE_STYLE,
@@ -274,11 +273,17 @@ function MapMarkerPin({
   tone,
   veiled,
   unitedRing,
+  contentMotionClass,
+  shellMotionClass,
   children,
 }: {
   tone: MapMarkerTone;
   veiled?: boolean;
   unitedRing?: boolean;
+  /** Applied to avatar/icon only (portal spin). */
+  contentMotionClass?: string;
+  /** Fade/scale on the pin shell without rotating it. */
+  shellMotionClass?: string;
   children: React.ReactNode;
 }) {
   const w = veiled ? 22 : 44;
@@ -287,7 +292,7 @@ function MapMarkerPin({
 
   return (
     <div
-      className={`relative ${unitedRing ? "drop-shadow-[0_0_8px_rgba(94,234,212,0.5)]" : "drop-shadow-xl"}`}
+      className={`relative ${unitedRing ? "drop-shadow-[0_0_8px_rgba(94,234,212,0.5)]" : "drop-shadow-xl"} ${shellMotionClass ?? ""}`}
       style={{ width: w, height: h }}
     >
       <svg
@@ -315,7 +320,7 @@ function MapMarkerPin({
       </svg>
 
       <div
-        className={`absolute left-1/2 overflow-hidden rounded-full ${tone.contentClass}`}
+        className={`absolute left-1/2 ${tone.contentClass}`}
         style={{
           width: veiled ? 10 : 21,
           height: veiled ? 10 : 21,
@@ -323,7 +328,9 @@ function MapMarkerPin({
           transform: "translate(-50%, -50%)",
         }}
       >
-        <div className="flex h-full w-full items-center justify-center">
+        <div
+          className={`flex h-full w-full items-center justify-center overflow-hidden rounded-full ${contentMotionClass ?? ""}`}
+        >
           {children}
         </div>
       </div>
@@ -497,9 +504,6 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   />
                 </div>
 
-                {/* Quest routes — same 0–100 space as pins */}
-                <QuestTrail pins={data.pins} united={united} />
-
                 {united && (
                   <div
                     className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_30%_45%,rgba(45,212,191,0.14),transparent_45%),radial-gradient(ellipse_at_75%_50%,rgba(245,158,11,0.12),transparent_48%)] mix-blend-screen"
@@ -536,6 +540,25 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           : enterMotion === "shrink"
                             ? "hire-enter-shrink"
                             : "";
+                    const isPortalExit =
+                      isExiting && exitMotion === "portal";
+                    const isPortalEnter =
+                      isEntering && enterMotion === "portal";
+                    const contentMotionClass = isPortalExit
+                      ? "hire-exit-portal-spin"
+                      : isPortalEnter
+                        ? "hire-enter-portal-spin"
+                        : isExiting
+                          ? exitClass
+                          : isEntering
+                            ? enterClass
+                            : "";
+                    const shellMotionClass =
+                      isPortalExit
+                        ? "hire-exit-portal-shell"
+                        : isPortalEnter
+                          ? "hire-enter-portal-shell"
+                          : "";
 
                     const isHidden = hiddenPinId === pin.id;
                     const isSecret = pin.category === "easter_egg";
@@ -607,8 +630,6 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                               isSpawn && !isEntering
                                 ? "animate-[pin-spawn_0.7s_ease-out]"
                                 : "",
-                              isExiting ? exitClass : "",
-                              isEntering ? enterClass : "",
                             ]
                               .filter(Boolean)
                               .join(" ") || undefined
@@ -634,6 +655,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           tone={tone}
                           veiled={isVeiledSecret}
                           unitedRing={united && isCompany && !isVeiledSecret}
+                          contentMotionClass={contentMotionClass || undefined}
+                          shellMotionClass={shellMotionClass || undefined}
                         >
                           {showAvatar && avatar ? (
                             // eslint-disable-next-line @next/next/no-img-element

@@ -422,6 +422,64 @@ body {
   }
 }
 
+@keyframes hire-exit-portal-spin {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  45% {
+    transform: scale(1.12) rotate(160deg);
+    opacity: 1;
+    filter: hue-rotate(50deg) brightness(1.45);
+  }
+  100% {
+    transform: scale(0.08) rotate(400deg);
+    opacity: 0;
+    filter: hue-rotate(100deg) brightness(2);
+  }
+}
+
+@keyframes hire-enter-portal-spin {
+  0% {
+    transform: scale(0.08) rotate(-400deg);
+    opacity: 0;
+    filter: hue-rotate(100deg) brightness(2);
+  }
+  55% {
+    transform: scale(1.12) rotate(-40deg);
+    opacity: 1;
+    filter: hue-rotate(40deg) brightness(1.35);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: hue-rotate(0deg) brightness(1);
+  }
+}
+
+@keyframes hire-exit-portal-shell {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(1.6);
+  }
+}
+
+@keyframes hire-enter-portal-shell {
+  0% {
+    opacity: 0;
+    filter: brightness(1.6);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
 @keyframes hire-exit-portal {
   0% {
     transform: scale(1) rotate(0deg);
@@ -512,7 +570,14 @@ body {
 
 .hire-exit-portal {
   animation: hire-exit-portal 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  border-radius: 9999px;
+}
+
+.hire-exit-portal-spin {
+  animation: hire-exit-portal-spin 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.hire-exit-portal-shell {
+  animation: hire-exit-portal-shell 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .hire-exit-burst {
@@ -521,7 +586,14 @@ body {
 
 .hire-enter-portal {
   animation: hire-enter-portal 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  border-radius: 9999px;
+}
+
+.hire-enter-portal-spin {
+  animation: hire-enter-portal-spin 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.hire-enter-portal-shell {
+  animation: hire-enter-portal-shell 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .hire-enter-shrink {
@@ -535,8 +607,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hire-exit-shrink,
   .hire-exit-portal,
+  .hire-exit-portal-spin,
+  .hire-exit-portal-shell,
   .hire-exit-burst,
   .hire-enter-portal,
+  .hire-enter-portal-spin,
+  .hire-enter-portal-shell,
   .hire-enter-shrink,
   .hire-enter-burst {
     animation-duration: 0.01ms !important;

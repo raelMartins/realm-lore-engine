@@ -134,7 +134,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
 
   return (
     <>
-      <div className="pointer-events-auto absolute bottom-6 left-6 z-30 flex flex-col gap-2">
+      <div className="pointer-events-auto absolute bottom-6 right-24 z-30 flex flex-col gap-2">
         {!unlocked ? (
           <button
             type="button"

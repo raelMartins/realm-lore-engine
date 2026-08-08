@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getCompanyData } from "@/lib/getCompanyData";
 import { MapCanvas, type CameraCommand, type CameraCommandInput } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
@@ -8,7 +8,6 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
 import { GuildChartControls } from "@/components/GuildChartControls";
 import { ExplorationProgress } from "@/components/ExplorationProgress";
-import { AllianceBanner } from "@/components/hire/AllianceBanner";
 import { Confetti } from "@/components/hire/Confetti";
 import { CalendarModal } from "@/components/CalendarModal";
 import { getSchedulingUrl } from "@/lib/scheduling";
@@ -42,7 +41,15 @@ import {
   revealSecret,
   isSecretPin,
 } from "@/lib/secrets";
-import { Volume2, VolumeX, Music2, Music, Sparkles } from "lucide-react";
+import {
+  Volume2,
+  VolumeX,
+  Music2,
+  Music,
+  Sparkles,
+  CalendarDays,
+  X,
+} from "lucide-react";
 
 type WorldApiResponse = CompanyLoreConfig & {
   _meta?: { source: string; worldId: string };
@@ -69,7 +76,6 @@ export default function Home() {
     homeUnitedState(),
   );
   const [allianceForged, setAllianceForged] = useState(false);
-  const [bannerOpen, setBannerOpen] = useState(false);
   const [confettiOn, setConfettiOn] = useState(false);
   const [cameraCommand, setCameraCommand] = useState<CameraCommand | null>(
     null,
@@ -86,6 +92,7 @@ export default function Home() {
   );
   const [secretToast, setSecretToast] = useState<string | null>(null);
   const schedulingUrl = getSchedulingUrl();
+  const allianceEpoch = useRef(0);
 
   const refreshWorld = async () => {
     const res = await fetch("/api/world");
@@ -169,32 +176,13 @@ export default function Home() {
     setCameraCommand({ ...command, token: Date.now() } as CameraCommand);
   };
 
-  const returnAdventurerHome = async (opts?: { animateCamera?: boolean }) => {
-    setExitPinId(null);
-    setExitMotion(null);
-    setEnterPinId(null);
-    setEnterMotion(null);
-    setHiddenPinId(ADVENTURER_PIN_ID);
-    const home = homeUnitedState();
-    setUnitedState(home);
-    saveUnitedState(worldId, home);
-    await sleep(40);
-    setHiddenPinId(null);
-    if (opts?.animateCamera !== false) {
-      issueCamera({ type: "reset", durationMs: 500 });
-      window.setTimeout(() => setCameraCommand(null), 520);
-    } else {
-      setCameraCommand(null);
-    }
-  };
-
   /** Locked motion: portal out → hidden → camera pans east → portal in. */
   const runPortalCinematic = async () => {
     if (!worldData || hireBusy) return;
     const motion: HireMotion = "portal";
+    const epoch = ++allianceEpoch.current;
 
     setHireBusy(true);
-    setBannerOpen(false);
     setSelectedPin(null);
     setSelectedRealm(null);
     setEnterPinId(null);
@@ -273,18 +261,43 @@ export default function Home() {
     setEnterMotion(null);
     setConfettiOn(false);
     setCameraCommand(null);
-    setBannerOpen(true);
     setHireBusy(false);
+
+    if (schedulingUrl) {
+      await sleep(2000);
+      if (allianceEpoch.current === epoch) {
+        setCalendarOpen(true);
+      }
+    }
   };
 
   const handleHire = () => {
-    setBannerOpen(true);
+    if (hireBusy) return;
+    if (allianceForged) {
+      if (schedulingUrl) setCalendarOpen(true);
+      return;
+    }
+    void runPortalCinematic();
   };
 
-  const handleBannerClose = () => {
+  const unforgeAlliance = async () => {
     if (hireBusy) return;
-    setBannerOpen(false);
-    void returnAdventurerHome();
+    allianceEpoch.current += 1;
+    setCalendarOpen(false);
+    setAllianceForged(false);
+    setExitPinId(null);
+    setExitMotion(null);
+    setEnterPinId(null);
+    setEnterMotion(null);
+    setHiddenPinId(ADVENTURER_PIN_ID);
+    const home = homeUnitedState();
+    setUnitedState(home);
+    saveUnitedState(worldId, home);
+    await sleep(40);
+    setHiddenPinId(null);
+    issueCamera({ type: "reset", durationMs: 500 });
+    window.setTimeout(() => setCameraCommand(null), 520);
+    soundFx.playSelectSound();
   };
 
   const listPins = useMemo(() => {
@@ -406,7 +419,7 @@ export default function Home() {
         unitedState.united ? "realm-united" : ""
       }`}
     >
-      <div className="pointer-events-none absolute top-6 left-6 z-30 flex flex-col items-start gap-2">
+      <div className="pointer-events-none absolute top-6 left-6 z-30">
         <div className="pointer-events-auto">
           <CommandPalette
             pins={listPins}
@@ -414,13 +427,56 @@ export default function Home() {
             realmLabels={displayData.realmLabels}
           />
         </div>
-        <ExplorationProgress
-          explored={exploration.explored}
-          total={exploration.total}
-        />
       </div>
 
-      <div className="pointer-events-none absolute top-6 right-6 z-30 flex items-start gap-3">
+      <div className="pointer-events-none absolute top-5 left-1/2 z-30 -translate-x-1/2">
+        <div className="pointer-events-auto flex items-center gap-2">
+          {!allianceForged ? (
+            <button
+              type="button"
+              onClick={handleHire}
+              disabled={hireBusy}
+              className="glass-panel glass-btn flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
+              title="Forge alliance"
+            >
+              <Sparkles className="h-4 w-4 text-amber-200/90" />
+              {hireBusy ? "Crossing…" : "Forge Alliance"}
+            </button>
+          ) : (
+            <>
+              {schedulingUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setCalendarOpen(true)}
+                  disabled={hireBusy}
+                  className="glass-panel glass-btn flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
+                  title="Chart a meeting"
+                >
+                  <CalendarDays className="h-4 w-4 text-amber-200/90" />
+                  Chart a meeting
+                </button>
+              ) : (
+                <div className="glass-panel flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist">
+                  <Sparkles className="h-4 w-4 text-teal-300" />
+                  Alliance Forged
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => void unforgeAlliance()}
+                disabled={hireBusy}
+                className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver disabled:opacity-50"
+                title="Unforge alliance"
+                aria-label="Unforge alliance"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="pointer-events-none absolute top-6 right-6 z-30">
         <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
           <span
             className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse ${
@@ -433,7 +489,9 @@ export default function Home() {
               : displayData.companyName}
           </span>
         </div>
+      </div>
 
+      <div className="pointer-events-none absolute bottom-6 left-6 z-30">
         <div className="pointer-events-auto flex flex-col gap-2">
           <button
             type="button"
@@ -460,17 +518,14 @@ export default function Home() {
               <Music className="h-4 w-4 opacity-50" />
             )}
           </button>
-
-          <button
-            type="button"
-            onClick={handleHire}
-            disabled={hireBusy}
-            className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver disabled:opacity-50"
-            title="Forge alliance / preview crossing motions"
-          >
-            <Sparkles className="h-4 w-4 text-amber-200/90" />
-          </button>
         </div>
+      </div>
+
+      <div className="pointer-events-none absolute bottom-6 left-1/2 z-30 w-[min(100%-2rem,280px)] -translate-x-1/2">
+        <ExplorationProgress
+          explored={exploration.explored}
+          total={exploration.total}
+        />
       </div>
 
       <MapCanvas
@@ -526,19 +581,6 @@ export default function Home() {
         onClose={() => setSelectedPin(null)}
         onHire={handleHire}
         onOpenCalendar={() => setCalendarOpen(true)}
-      />
-
-      <AllianceBanner
-        open={bannerOpen}
-        onClose={handleBannerClose}
-        united={allianceForged}
-        busy={hireBusy}
-        onForge={() => void runPortalCinematic()}
-        schedulingAvailable={Boolean(schedulingUrl)}
-        onSchedule={() => {
-          setBannerOpen(false);
-          setCalendarOpen(true);
-        }}
       />
 
       <CalendarModal

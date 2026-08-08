@@ -115,9 +115,9 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
               dominantBaseline="middle"
               className="pointer-events-none select-none"
               fill={active ? "#f8fafc" : "rgba(226, 232, 240, 0.7)"}
-              fontSize={2.4}
+              fontSize={1.55}
               fontFamily="var(--font-cinzel), serif"
-              letterSpacing="0.06"
+              letterSpacing="0.05"
               style={{
                 textShadow: "0 1px 3px rgba(0,0,0,0.75)",
               }}
