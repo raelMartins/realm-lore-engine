@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --realm-void: #040a0e;
-  --realm-deep: #071319;
+  --realm-void: #041214;
+  --realm-deep: #071a1d;
   --realm-surface: rgba(14, 32, 42, 0.55);
   --realm-glass: rgba(255, 255, 255, 0.06);
   --realm-glass-strong: rgba(255, 255, 255, 0.1);
@@ -191,9 +191,9 @@ body {
 /* Soft ambient page glow */
 .realm-atmosphere {
   background:
-    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(45, 212, 191, 0.08), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 85% 20%, rgba(148, 163, 184, 0.06), transparent 50%),
-    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(13, 148, 136, 0.07), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(45, 212, 191, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 85% 20%, rgba(45, 212, 191, 0.06), transparent 50%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(13, 148, 136, 0.14), transparent 55%),
     var(--realm-void);
   overscroll-behavior: none;
   touch-action: manipulation;
