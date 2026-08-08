@@ -17,7 +17,8 @@ export const GUILD_BOUNDS = {
   maxY: 98,
 };
 
-export const GUILD_PIN_CAP = 14;
+/** Soft ceiling for guild-shore pins (seed + charting). */
+export const GUILD_PIN_CAP = 48;
 
 /** Parse M/L path coordinates from realm hit SVG paths. */
 export function parsePathPoints(d: string): Point[] {

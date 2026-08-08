@@ -1,0 +1,61 @@
+{
+  "worldId": "example-guild",
+  "companyName": "Example Guild",
+  "tagline": "A sample east-isle world for local seeding",
+  "customPitchMessage": "Welcome — this payload was loaded via the dev seed endpoint.",
+  "realmLabelCompany": "Example Shore",
+  "targetTeamMembers": [
+    {
+      "name": "Guild Steward",
+      "role": "Engineering Lead",
+      "note": "Customize in your private seed JSON."
+    }
+  ],
+  "replacePins": true,
+  "pins": [
+    {
+      "id": "company-crest",
+      "title": "Example Guild",
+      "subtitle": "The Shore Across the Channel",
+      "category": "achievement",
+      "iconName": "Castle",
+      "coordinates": { "x": 68, "y": 38 },
+      "content": {
+        "badge": "Achievement",
+        "description": "Replace this example with your east-isle lore before seeding a live world.",
+        "tags": ["Culture", "Mission"]
+      }
+    },
+    {
+      "id": "company-lead",
+      "title": "Guild Steward",
+      "subtitle": "Engineering Lead",
+      "category": "character",
+      "iconName": "Users",
+      "avatarId": "viking",
+      "coordinates": { "x": 78, "y": 48 },
+      "content": {
+        "badge": "Character",
+        "description": "Contact node for this seeded realm.",
+        "tags": ["Team"]
+      }
+    },
+    {
+      "id": "quest-main",
+      "title": "The Guild Pitch",
+      "subtitle": "Why Join Forces?",
+      "category": "quest",
+      "iconName": "Scroll",
+      "coordinates": { "x": 74, "y": 68 },
+      "content": {
+        "badge": "Main Quest",
+        "description": "After seeding, open the map with WORLD_ID=example-guild to explore this shore.",
+        "callToAction": {
+          "label": "Schedule a Quest Call",
+          "actionType": "calendar",
+          "target": "#schedule"
+        }
+      }
+    }
+  ]
+}
