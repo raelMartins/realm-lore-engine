@@ -68,6 +68,8 @@ interface MapCanvasProps {
   cameraCommand?: CameraCommand | null;
   /** Alliance cinematic / lasting color alignment for islands. */
   realmColorPhase?: RealmColorPhase;
+  /** Curved skill-transfer arcs west → east. */
+  showTransferTrails?: boolean;
   /** Revealed easter-egg pin ids — others render as faint hotspots. */
   revealedSecretIds?: Set<string>;
 }
@@ -407,6 +409,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   hiddenPinId = null,
   cameraCommand = null,
   realmColorPhase = "idle",
+  showTransferTrails = false,
   revealedSecretIds,
 }) => {
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -511,7 +514,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
                 <AllianceTransferTrails
                   pins={data.pins}
-                  active={realmColorPhase === "aligning"}
+                  active={showTransferTrails}
                 />
 
                 {(united ||

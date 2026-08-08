@@ -81,6 +81,7 @@ export default function Home() {
   const [congratsOpen, setCongratsOpen] = useState(false);
   const [realmColorPhase, setRealmColorPhase] =
     useState<RealmColorPhase>("idle");
+  const [showTransferTrails, setShowTransferTrails] = useState(false);
   const [confettiOn, setConfettiOn] = useState(false);
   const [confettiHeavy, setConfettiHeavy] = useState(false);
   const [cameraCommand, setCameraCommand] = useState<CameraCommand | null>(
@@ -229,8 +230,9 @@ export default function Home() {
       return;
     }
 
-    const celebrateMs = reduced ? 400 : 2600;
-    const alignMs = reduced ? 200 : 3000;
+    const celebrateMs = reduced ? 200 : 900;
+    const alignMs = reduced ? 200 : 2800;
+    const trailsMs = reduced ? 200 : 2200;
     const focusMs = reduced ? 200 : 750;
     const exitMs = reduced ? 80 : 1100;
     const holdGoneMs = reduced ? 120 : 380;
@@ -240,6 +242,7 @@ export default function Home() {
 
     // 0) Confetti + parchment congrats; both isles lit as if hovered
     setUnitedState(homeUnitedState());
+    setShowTransferTrails(false);
     setConfettiHeavy(true);
     setConfettiOn(true);
     setCongratsOpen(true);
@@ -247,7 +250,7 @@ export default function Home() {
     soundFx.playSelectSound();
     await sleep(celebrateMs);
 
-    // 1) Adventurer isle slowly takes on guild colors
+    // 1) Adventurer isle slowly takes on guild colors (banner still up)
     setRealmColorPhase("aligning");
     await sleep(alignMs);
 
@@ -257,9 +260,14 @@ export default function Home() {
     setAllianceForged(true);
     setConfettiOn(false);
     setConfettiHeavy(false);
-    await sleep(reduced ? 120 : 450);
+    await sleep(reduced ? 120 : 400);
 
-    // 3) Center on west pin, then portal out
+    // 3) Skill arcs draw west → east and stay until unforge
+    setShowTransferTrails(true);
+    await sleep(trailsMs);
+    await sleep(reduced ? 80 : 250);
+
+    // 4) Center on west pin, then portal out
     issueCamera({
       type: "focus-pin",
       pinId: ADVENTURER_PIN_ID,
@@ -340,6 +348,7 @@ export default function Home() {
     setConfettiOn(false);
     setConfettiHeavy(false);
     setAllianceForged(false);
+    setShowTransferTrails(false);
     setRealmColorPhase("idle");
     setExitPinId(null);
     setExitMotion(null);
@@ -616,6 +625,7 @@ export default function Home() {
             ? "aligned"
             : realmColorPhase
         }
+        showTransferTrails={showTransferTrails}
       />
 
       <GuildChartControls
