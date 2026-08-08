@@ -11,6 +11,7 @@ import {
   Boxes,
   Trophy,
   Scroll,
+  CalendarDays,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { getAvatarById } from "@/config/avatars";
@@ -19,6 +20,7 @@ interface LoreDrawerProps {
   pin: LorePin | null;
   onClose: () => void;
   onHire?: () => void;
+  onOpenCalendar?: () => void;
 }
 
 type CardPlacement =
@@ -95,6 +97,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   pin,
   onClose,
   onHire,
+  onOpenCalendar,
 }) => {
   const cardRef = useRef<HTMLElement>(null);
   const [placement, setPlacement] = useState<CardPlacement | null>(null);
@@ -337,6 +340,18 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                       className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
+                      {pin.content.callToAction.label}
+                    </button>
+                  ) : pin.content.callToAction.actionType === "calendar" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenCalendar?.();
+                      }}
+                      className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
                       {pin.content.callToAction.label}
                     </button>
                   ) : (

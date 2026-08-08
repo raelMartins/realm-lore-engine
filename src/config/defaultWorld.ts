@@ -139,9 +139,9 @@ export const defaultWorldData: CompanyLoreConfig = {
         description:
           'Looking to build high-polish spatial tools, lore platforms, and complex web UIs alongside world-class teams.',
         callToAction: {
-          label: 'Forge Alliance',
-          actionType: 'hire',
-          target: '#forge-alliance',
+          label: 'Schedule a Quest Call',
+          actionType: 'calendar',
+          target: '#schedule',
         },
       },
     },

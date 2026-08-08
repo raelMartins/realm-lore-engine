@@ -10,6 +10,8 @@ import { GuildChartControls } from "@/components/GuildChartControls";
 import { ExplorationProgress } from "@/components/ExplorationProgress";
 import { AllianceBanner } from "@/components/hire/AllianceBanner";
 import { Confetti } from "@/components/hire/Confetti";
+import { CalendarModal } from "@/components/CalendarModal";
+import { getSchedulingUrl } from "@/lib/scheduling";
 import { CompanyLoreConfig, LorePin, RealmSide } from "@/types/world";
 import { musicFx, soundFx } from "@/lib/audio";
 import {
@@ -69,6 +71,8 @@ export default function Home() {
   const [enterMotion, setEnterMotion] = useState<HireMotion | null>(null);
   const [hiddenPinId, setHiddenPinId] = useState<string | null>(null);
   const [hireBusy, setHireBusy] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const schedulingUrl = getSchedulingUrl();
 
   const refreshWorld = async () => {
     const res = await fetch("/api/world");
@@ -458,6 +462,7 @@ export default function Home() {
         pin={selectedPin}
         onClose={() => setSelectedPin(null)}
         onHire={handleHire}
+        onOpenCalendar={() => setCalendarOpen(true)}
       />
 
       <AllianceBanner
@@ -466,6 +471,17 @@ export default function Home() {
         united={allianceForged}
         busy={hireBusy}
         onForge={() => void runPortalCinematic()}
+        schedulingAvailable={Boolean(schedulingUrl)}
+        onSchedule={() => {
+          setBannerOpen(false);
+          setCalendarOpen(true);
+        }}
+      />
+
+      <CalendarModal
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        schedulingUrl={schedulingUrl}
       />
 
       <Confetti active={confettiOn} />

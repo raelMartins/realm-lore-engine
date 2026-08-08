@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Aperture } from "lucide-react";
+import { Sparkles, X, Aperture, CalendarDays } from "lucide-react";
 
 interface AllianceBannerProps {
   open: boolean;
@@ -10,6 +10,8 @@ interface AllianceBannerProps {
   united: boolean;
   busy?: boolean;
   onForge: () => void;
+  onSchedule?: () => void;
+  schedulingAvailable?: boolean;
 }
 
 export const AllianceBanner: React.FC<AllianceBannerProps> = ({
@@ -18,6 +20,8 @@ export const AllianceBanner: React.FC<AllianceBannerProps> = ({
   united,
   busy = false,
   onForge,
+  onSchedule,
+  schedulingAvailable = false,
 }) => {
   return (
     <AnimatePresence>
@@ -40,8 +44,8 @@ export const AllianceBanner: React.FC<AllianceBannerProps> = ({
                 </h2>
                 <p className="mt-1 text-sm leading-snug text-realm-silver-muted">
                   {united
-                    ? "Replay the portal crossing, or close to return the adventurer home."
-                    : "The adventurer portals out, the camera follows across the channel, then portals in on Guild Shore."}
+                    ? "Replay the portal, book a call, or close to return home."
+                    : "The adventurer portals out, the camera follows, then portals in on Guild Shore."}
                 </p>
               </div>
               <button
@@ -55,15 +59,29 @@ export const AllianceBanner: React.FC<AllianceBannerProps> = ({
               </button>
             </div>
 
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onForge}
-              className="glass-btn mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-semibold text-realm-silver disabled:opacity-50"
-            >
-              <Aperture className="h-4 w-4 text-teal-300" />
-              {united ? "Replay portal crossing" : "Cross via Portal"}
-            </button>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onForge}
+                className="glass-btn flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-semibold text-realm-silver disabled:opacity-50"
+              >
+                <Aperture className="h-4 w-4 text-teal-300" />
+                {united ? "Replay portal crossing" : "Cross via Portal"}
+              </button>
+
+              {united && schedulingAvailable && onSchedule && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={onSchedule}
+                  className="glass-btn flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium text-realm-mist disabled:opacity-50"
+                >
+                  <CalendarDays className="h-4 w-4 text-amber-200/90" />
+                  Chart a meeting
+                </button>
+              )}
+            </div>
           </div>
         </motion.div>
       )}

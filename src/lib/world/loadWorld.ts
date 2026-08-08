@@ -7,11 +7,7 @@ import type {
 import { normalizeConfig, normalizePin } from '@/lib/getCompanyData';
 import { ensureSchema } from '@/lib/db/schema';
 import { getTursoClient, getWorldId } from '@/lib/db/turso';
-import {
-  getDefaultEastPins,
-  getDefaultWorldMeta,
-  getStaticWestPins,
-} from '@/lib/world/staticWest';
+import { withQuestCalendarCta } from '@/lib/scheduling';
 
 type TeamMember = NonNullable<CompanyLoreConfig['targetTeamMembers']>[number];
 
@@ -170,7 +166,7 @@ async function loadWorldFromTurso(
       company: world.realm_label_company ?? defaults.realmLabels?.company,
     },
     targetTeamMembers: teamMembers,
-    pins: [...westPins, ...eastPins],
+    pins: withQuestCalendarCta([...westPins, ...eastPins]),
   });
 }
 
@@ -191,7 +187,10 @@ export async function loadWorld(): Promise<{
     return {
       data: normalizeConfig({
         ...getDefaultWorldMeta(),
-        pins: [...getStaticWestPins(), ...getDefaultEastPins()],
+        pins: withQuestCalendarCta([
+          ...getStaticWestPins(),
+          ...getDefaultEastPins(),
+        ]),
       }),
       source: 'fallback',
       worldId,
@@ -206,7 +205,10 @@ export async function loadWorld(): Promise<{
     return {
       data: normalizeConfig({
         ...getDefaultWorldMeta(),
-        pins: [...getStaticWestPins(), ...getDefaultEastPins()],
+        pins: withQuestCalendarCta([
+          ...getStaticWestPins(),
+          ...getDefaultEastPins(),
+        ]),
       }),
       source: 'fallback',
       worldId,
