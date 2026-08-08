@@ -26,6 +26,11 @@ interface MapCanvasProps {
   selectedRealm: RealmSide | null;
   onSelectRealm: (realm: RealmSide) => void;
   mapImageUrl?: string;
+  /** When true, clicks on the map stage pick guild placement coords. */
+  placementMode?: boolean;
+  onPlaceAttempt?: (coords: { x: number; y: number }) => void;
+  /** Briefly animate this pin id after creation. */
+  spawnPinId?: string | null;
 }
 
 const CanvasControls = () => {
@@ -179,7 +184,20 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   selectedRealm,
   onSelectRealm,
   mapImageUrl,
+  placementMode = false,
+  onPlaceAttempt,
+  spawnPinId = null,
 }) => {
+  const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!placementMode || !onPlaceAttempt) return;
+    const stage = e.currentTarget;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    onPlaceAttempt({ x, y });
+  };
+
   return (
     <div className="absolute inset-0 z-0 select-none overflow-hidden bg-realm-void">
       <TransformWrapper
@@ -189,7 +207,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         centerOnInit
         limitToBounds
         doubleClick={{ disabled: true }}
-        panning={{ excluded: ["button", "[data-realm-hit]"] }}
+        panning={{
+          disabled: placementMode,
+          excluded: ["button", "[data-realm-hit]"],
+        }}
         wheel={{ step: 0.08 }}
       >
         {() => (
@@ -205,9 +226,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 Pin % and SVG 0–100 viewBox both refer to this box only.
               */}
               <div
-                className="relative overflow-hidden bg-[#1a1410] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]"
+                className={`relative overflow-hidden bg-[#1a1410] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] ${
+                  placementMode ? "cursor-crosshair" : ""
+                }`}
                 style={MAP_STAGE_SIZE_STYLE}
                 data-map-stage
+                onClick={handleStageClick}
               >
                 <RealmFocusTargets />
                 {/* Map art — never steal clicks from realm hits / pins */}
@@ -241,7 +265,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 <div className="pointer-events-none absolute inset-0 z-[4] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]" />
 
                 {/* Island hit regions — above map art, below pin buttons */}
-                <div className="absolute inset-0 z-[1]">
+                <div
+                  className={`absolute inset-0 z-[1] ${
+                    placementMode ? "pointer-events-none" : ""
+                  }`}
+                >
                   <RealmHitLayer
                     labels={data.realmLabels}
                     selectedRealm={selectedRealm}
@@ -260,6 +288,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     const avatar = getAvatarById(pin.avatarId);
                     const showAvatar =
                       pin.category === "character" && Boolean(avatar);
+                    const isSpawn = spawnPinId === pin.id;
 
                     return (
                       <button
@@ -267,16 +296,31 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         type="button"
                         data-pin-id={pin.id}
                         data-realm={pin.realm}
-                        onClick={() => onSelectPin(pin)}
-                        onMouseEnter={() => soundFx.playHoverSound()}
+                        onClick={(e) => {
+                          if (placementMode) {
+                            e.stopPropagation();
+                            return;
+                          }
+                          onSelectPin(pin);
+                        }}
+                        onMouseEnter={() => {
+                          if (!placementMode) soundFx.playHoverSound();
+                        }}
                         style={{
                           left: `${pin.coordinates.x}%`,
                           top: `${pin.coordinates.y}%`,
                         }}
                         className={`group pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 focus:outline-none ${
                           isSelected ? "z-30 scale-125" : "hover:scale-110"
-                        }`}
+                        } ${placementMode ? "pointer-events-none" : ""}`}
                       >
+                        <div
+                          className={
+                            isSpawn
+                              ? "animate-[pin-spawn_0.7s_ease-out]"
+                              : undefined
+                          }
+                        >
                         <div
                           className={`absolute -inset-3 rounded-full blur-md transition-opacity duration-300 ${
                             isSelected
@@ -333,6 +377,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                               {pin.subtitle}
                             </p>
                           </div>
+                        </div>
                         </div>
                       </button>
                     );

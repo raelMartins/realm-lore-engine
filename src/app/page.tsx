@@ -6,8 +6,13 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
+import { GuildChartControls } from "@/components/GuildChartControls";
 import { CompanyLoreConfig, LorePin, RealmSide } from "@/types/world";
 import { musicFx, soundFx } from "@/lib/audio";
+import {
+  PLACEMENT_ERROR_MESSAGE,
+  validateGuildPlacement,
+} from "@/lib/world/placement";
 import { Volume2, VolumeX, Music2, Music } from "lucide-react";
 
 type WorldApiResponse = CompanyLoreConfig & {
@@ -21,6 +26,23 @@ export default function Home() {
   const [isMuted, setIsMuted] = useState(false);
   const [musicOn, setMusicOn] = useState(true);
 
+  const [unlocked, setUnlocked] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [draft, setDraft] = useState<{
+    coordinates: { x: number; y: number };
+  } | null>(null);
+  const [placeHint, setPlaceHint] = useState<string | null>(null);
+  const [spawnPinId, setSpawnPinId] = useState<string | null>(null);
+
+  const refreshWorld = async () => {
+    const res = await fetch("/api/world");
+    if (!res.ok) throw new Error(`World API ${res.status}`);
+    const json = (await res.json()) as WorldApiResponse;
+    const { _meta: _ignored, ...data } = json;
+    setWorldData(data);
+    return data;
+  };
+
   useEffect(() => {
     void musicFx.start();
   }, []);
@@ -30,14 +52,22 @@ export default function Home() {
 
     async function load() {
       try {
-        const res = await fetch("/api/world");
-        if (!res.ok) throw new Error(`World API ${res.status}`);
-        const json = (await res.json()) as WorldApiResponse;
-        const { _meta: _ignored, ...data } = json;
-        if (!cancelled) setWorldData(data);
+        const data = await refreshWorld();
+        if (cancelled) return;
+        setWorldData(data);
       } catch (error) {
         console.error("Failed to load /api/world, using local fallback:", error);
         if (!cancelled) setWorldData(getCompanyData());
+      }
+
+      try {
+        const unlockRes = await fetch("/api/guild/unlock");
+        if (unlockRes.ok) {
+          const status = (await unlockRes.json()) as { unlocked?: boolean };
+          if (!cancelled && status.unlocked) setUnlocked(true);
+        }
+      } catch {
+        /* explore-only if unlock status fails */
       }
     }
 
@@ -48,12 +78,14 @@ export default function Home() {
   }, []);
 
   const handleSelectPin = (pin: LorePin) => {
+    if (placing) return;
     soundFx.playSelectSound();
     setSelectedRealm(null);
     setSelectedPin(pin);
   };
 
   const handleSelectRealm = (realm: RealmSide) => {
+    if (placing) return;
     soundFx.playHoverSound();
     setSelectedPin(null);
     setSelectedRealm(realm);
@@ -67,6 +99,37 @@ export default function Home() {
   const handleToggleMusic = async () => {
     const enabled = await musicFx.toggle();
     setMusicOn(enabled);
+  };
+
+  const handlePlaceAttempt = (coords: { x: number; y: number }) => {
+    if (!worldData) return;
+    const guildPins = worldData.pins.filter((p) => p.realm === "company");
+    const error = validateGuildPlacement(coords, guildPins);
+    if (error) {
+      setPlaceHint(PLACEMENT_ERROR_MESSAGE[error]);
+      soundFx.playHoverSound();
+      return;
+    }
+    setPlaceHint(null);
+    setPlacing(false);
+    setDraft({
+      coordinates: {
+        x: Math.round(coords.x * 10) / 10,
+        y: Math.round(coords.y * 10) / 10,
+      },
+    });
+    soundFx.playSelectSound();
+  };
+
+  const handlePinCreated = async (pinId: string) => {
+    try {
+      await refreshWorld();
+      setSpawnPinId(pinId);
+      window.setTimeout(() => setSpawnPinId(null), 900);
+      soundFx.playSelectSound();
+    } catch (error) {
+      console.error("Failed to refresh world after pin create:", error);
+    }
   };
 
   if (!worldData) {
@@ -131,6 +194,29 @@ export default function Home() {
         selectedRealm={selectedRealm}
         onSelectRealm={handleSelectRealm}
         mapImageUrl="/maps/realm-map.png"
+        placementMode={placing}
+        onPlaceAttempt={handlePlaceAttempt}
+        spawnPinId={spawnPinId}
+      />
+
+      <GuildChartControls
+        unlocked={unlocked}
+        onUnlocked={() => setUnlocked(true)}
+        placing={placing}
+        onStartPlace={() => {
+          setSelectedPin(null);
+          setSelectedRealm(null);
+          setPlaceHint(null);
+          setPlacing(true);
+        }}
+        onCancelPlace={() => {
+          setPlacing(false);
+          setPlaceHint(null);
+        }}
+        draft={draft}
+        onClearDraft={() => setDraft(null)}
+        onPinCreated={(pinId) => void handlePinCreated(pinId)}
+        placeHint={placeHint}
       />
 
       <RealmOverview
