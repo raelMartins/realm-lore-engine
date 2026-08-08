@@ -114,6 +114,33 @@ export default function Home() {
     void musicFx.start();
   }, []);
 
+  /** Hard interaction lock for the full alliance cinematic. */
+  useEffect(() => {
+    if (!hireBusy) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const block = (event: Event) => {
+      event.preventDefault();
+    };
+    const blockKeys = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    window.addEventListener("wheel", block, { passive: false });
+    window.addEventListener("touchmove", block, { passive: false });
+    window.addEventListener("keydown", blockKeys, true);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("wheel", block);
+      window.removeEventListener("touchmove", block);
+      window.removeEventListener("keydown", blockKeys, true);
+    };
+  }, [hireBusy]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -283,13 +310,16 @@ export default function Home() {
     setEnterPinId(null);
     setEnterMotion(null);
     setCameraCommand(null);
-    setHireBusy(false);
 
     if (schedulingUrl) {
       await sleep(2000);
       if (allianceEpoch.current === epoch) {
         setCalendarOpen(true);
       }
+    }
+    // Unlock only once the calendar is ready to appear (or skipped).
+    if (allianceEpoch.current === epoch) {
+      setHireBusy(false);
     }
   };
 
@@ -444,7 +474,15 @@ export default function Home() {
       className={`realm-atmosphere relative h-screen w-full overflow-hidden ${
         unitedState.united ? "realm-united" : ""
       }`}
+      aria-busy={hireBusy || undefined}
     >
+      {hireBusy && (
+        <div
+          className="fixed inset-0 z-[70]"
+          style={{ touchAction: "none", cursor: "wait" }}
+          aria-hidden
+        />
+      )}
       <div className="pointer-events-none absolute top-6 left-6 z-30">
         <div className="pointer-events-auto">
           <CommandPalette
@@ -629,7 +667,7 @@ export default function Home() {
 
       <Confetti
         active={confettiOn}
-        durationMs={confettiHeavy ? 5200 : 3200}
+        durationMs={confettiHeavy ? 6500 : 3200}
         intensity={confettiHeavy ? "heavy" : "normal"}
       />
     </main>

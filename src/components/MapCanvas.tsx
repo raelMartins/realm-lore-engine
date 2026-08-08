@@ -11,6 +11,7 @@ import * as Icons from "lucide-react";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { soundFx } from "@/lib/audio";
 import { RealmHitLayer, type RealmColorPhase } from "@/components/RealmHitLayer";
+import { AllianceTransferTrails } from "@/components/hire/AllianceTransferTrails";
 import {
   MAP_STAGE_SIZE_STYLE,
   SHOW_MAP_CALIBRATION,
@@ -507,6 +508,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     colorPhase={realmColorPhase}
                   />
                 </div>
+
+                <AllianceTransferTrails
+                  pins={data.pins}
+                  active={realmColorPhase === "aligning"}
+                />
 
                 {(united ||
                   realmColorPhase === "aligning" ||

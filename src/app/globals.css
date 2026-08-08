@@ -399,8 +399,8 @@ body {
     opacity: 1;
   }
   100% {
-    transform: translate3d(0, 110vh, 0) rotate(540deg);
-    opacity: 0.15;
+    transform: translate3d(var(--confetti-drift, 0px), 115vh, 0) rotate(720deg);
+    opacity: 0.12;
   }
 }
 
@@ -629,6 +629,59 @@ body {
 
 .realm-united .glass-panel {
   border-color: rgba(45, 212, 191, 0.28);
+}
+
+@keyframes alliance-transfer-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.92;
+  }
+}
+
+@keyframes alliance-transfer-dot-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.alliance-transfer-arc {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation-name: alliance-transfer-draw;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.alliance-transfer-dot {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: alliance-transfer-dot-pop 0.35s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alliance-transfer-arc {
+    animation-duration: 0.01ms !important;
+    stroke-dashoffset: 0;
+    opacity: 0.85;
+  }
+
+  .alliance-transfer-dot {
+    animation-duration: 0.01ms !important;
+    opacity: 1;
+  }
 }
 
 
