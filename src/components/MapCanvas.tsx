@@ -195,6 +195,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                       <button
                         key={pin.id}
                         type="button"
+                        data-pin-id={pin.id}
                         onClick={() => onSelectPin(pin)}
                         onMouseEnter={() => soundFx.playHoverSound()}
                         style={{
