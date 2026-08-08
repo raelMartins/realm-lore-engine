@@ -188,6 +188,140 @@ const DynamicIcon = ({
   return <IconComponent className={className} />;
 };
 
+/** Soft teardrop map-pin: short tail, smooth flanks, rounded tip. */
+const MAP_PIN_PATH =
+  "M20 1.8C12.2 1.8 5.5 8.2 5.5 16.2c0 6.2 5.4 13 12.2 20.2Q20 40.4 22.3 36.4C29.1 29.2 34.5 22.4 34.5 16.2 34.5 8.2 27.8 1.8 20 1.8Z";
+
+type MapMarkerTone = {
+  fill: string;
+  stroke: string;
+  aperture: string;
+  contentClass: string;
+  iconClass: string;
+};
+
+function mapMarkerTone(opts: {
+  isCompany: boolean;
+  isSelected: boolean;
+  isVeiled: boolean;
+  isSecret: boolean;
+}): MapMarkerTone {
+  if (opts.isVeiled) {
+    return {
+      fill: "rgba(4, 47, 46, 0.55)",
+      stroke: "rgba(153, 246, 228, 0.22)",
+      aperture: "rgba(4, 12, 16, 0.45)",
+      contentClass: "text-teal-200/50",
+      iconClass: "h-2.5 w-2.5",
+    };
+  }
+  if (opts.isSelected) {
+    if (opts.isCompany) {
+      return {
+        fill: "#f59e0b",
+        stroke: "rgba(255,255,255,0.7)",
+        aperture: "rgba(255, 251, 235, 0.92)",
+        contentClass: "text-slate-900",
+        iconClass: "h-5 w-5",
+      };
+    }
+    return {
+      fill: "#14b8a6",
+      stroke: "rgba(255,255,255,0.7)",
+      aperture: "rgba(204, 251, 241, 0.92)",
+      contentClass: "text-teal-950",
+      iconClass: "h-5 w-5",
+    };
+  }
+  if (opts.isCompany) {
+    return {
+      fill: "rgba(58, 48, 28, 0.92)",
+      stroke: "rgba(253, 230, 138, 0.42)",
+      aperture: "rgba(12, 20, 24, 0.72)",
+      contentClass: "text-realm-mist",
+      iconClass: "h-5 w-5",
+    };
+  }
+  if (opts.isSecret) {
+    return {
+      fill: "rgba(15, 70, 72, 0.92)",
+      stroke: "rgba(94, 234, 212, 0.48)",
+      aperture: "rgba(6, 24, 28, 0.7)",
+      contentClass: "text-teal-200",
+      iconClass: "h-5 w-5",
+    };
+  }
+  return {
+    fill: "rgba(14, 58, 64, 0.92)",
+    stroke: "rgba(255,255,255,0.3)",
+    aperture: "rgba(6, 24, 28, 0.7)",
+    contentClass: "text-realm-teal-soft",
+    iconClass: "h-5 w-5",
+  };
+}
+
+function MapMarkerPin({
+  tone,
+  veiled,
+  unitedRing,
+  children,
+}: {
+  tone: MapMarkerTone;
+  veiled?: boolean;
+  unitedRing?: boolean;
+  children: React.ReactNode;
+}) {
+  const w = veiled ? 22 : 44;
+  const h = veiled ? 28 : 54;
+  const holeR = veiled ? 5.2 : 10.5;
+
+  return (
+    <div
+      className={`relative ${unitedRing ? "drop-shadow-[0_0_8px_rgba(94,234,212,0.5)]" : "drop-shadow-xl"}`}
+      style={{ width: w, height: h }}
+    >
+      <svg
+        viewBox="0 0 40 44"
+        className="absolute inset-0 h-full w-full"
+        aria-hidden
+      >
+        <path
+          d={MAP_PIN_PATH}
+          fill={tone.fill}
+          stroke={tone.stroke}
+          strokeWidth={1.25}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        <circle
+          cx="20"
+          cy="16.2"
+          r={holeR}
+          fill={tone.aperture}
+          stroke={tone.stroke}
+          strokeWidth={0.85}
+          strokeOpacity={0.5}
+        />
+      </svg>
+
+      <div
+        className={`absolute left-1/2 overflow-hidden rounded-full ${tone.contentClass}`}
+        style={{
+          width: veiled ? 10 : 21,
+          height: veiled ? 10 : 21,
+          top: "36.8%",
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        <div className="flex h-full w-full items-center justify-center">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 /** Soft teal atlas grid shown when no custom map PNG is available. */
 const AtlasFallback = () => (
   <svg
@@ -276,12 +410,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         maxScale={4}
         centerOnInit
         limitToBounds
+        disablePadding={false}
         doubleClick={{ disabled: true }}
         panning={{
-          disabled: placementMode,
-          excluded: ["button", "[data-realm-hit]"],
+          disabled: placementMode || hireBusy,
+          // Pins stay excluded so a press can click; realm land must pan.
+          excluded: ["button"],
         }}
-        wheel={{ step: 0.08 }}
+        wheel={{ step: 0.08, disabled: hireBusy }}
       >
         {() => (
           <>
@@ -397,6 +533,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                       !isSecret ||
                       (revealedSecretIds?.has(pin.id) ?? false);
                     const isVeiledSecret = isSecret && !secretRevealed;
+                    const tone = mapMarkerTone({
+                      isCompany,
+                      isSelected,
+                      isVeiled: isVeiledSecret,
+                      isSecret,
+                    });
 
                     return (
                       <button
@@ -426,15 +568,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           top: `${pin.coordinates.y}%`,
                           opacity: isHidden ? 0 : isVeiledSecret ? 0.35 : 1,
                         }}
-                        className={`group pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer focus:outline-none ${
+                        className={`group pointer-events-auto absolute z-10 origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none ${
                           isSelected ? "z-30 scale-125" : "hover:scale-110"
                         } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-all duration-300"} ${
                           placementMode || hireBusy || isHidden
                             ? "pointer-events-none"
-                            : ""
-                        } ${
-                          united && isCompany
-                            ? "ring-1 ring-teal-300/30"
                             : ""
                         } ${isVeiledSecret ? "z-[3]" : ""}`}
                         aria-hidden={isHidden}
@@ -455,6 +593,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           }`}
                           className={
                             [
+                              "relative flex flex-col items-center",
                               isSpawn && !isEntering
                                 ? "animate-[pin-spawn_0.7s_ease-out]"
                                 : "",
@@ -466,7 +605,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           }
                         >
                         <div
-                          className={`absolute -inset-3 rounded-full blur-md transition-opacity duration-300 ${
+                          className={`pointer-events-none absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-md transition-opacity duration-300 ${
+                            isVeiledSecret ? "h-7 w-7" : "h-14 w-14"
+                          } ${
                             isSelected
                               ? isCompany
                                 ? "bg-amber-300/60 opacity-80 animate-pulse"
@@ -479,20 +620,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           }`}
                         />
 
-                        <div
-                          className={`relative flex items-center justify-center overflow-hidden rounded-full border shadow-xl transition-all duration-300 ${
-                            isVeiledSecret
-                              ? "h-5 w-5 border-teal-200/20 bg-teal-950/40 text-teal-200/50"
-                              : isSelected
-                                ? isCompany
-                                  ? "h-11 w-11 border-white/60 bg-gradient-to-br from-slate-100 to-amber-400 text-slate-900 shadow-amber-400/35"
-                                  : "h-11 w-11 border-white/60 bg-gradient-to-br from-teal-300 to-teal-600 text-teal-950 shadow-teal-400/40"
-                                : isCompany
-                                  ? "h-11 w-11 glass-btn border-amber-200/35 text-realm-mist group-hover:border-amber-300/55"
-                                  : isSecret
-                                    ? "h-11 w-11 glass-btn border-teal-300/40 text-teal-200 group-hover:border-teal-200/60"
-                                    : "h-11 w-11 glass-btn border-white/25 text-realm-teal-soft group-hover:border-teal-300/50"
-                          }`}
+                        <MapMarkerPin
+                          tone={tone}
+                          veiled={isVeiledSecret}
+                          unitedRing={united && isCompany && !isVeiledSecret}
                         >
                           {showAvatar && avatar ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -505,13 +636,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           ) : (
                             <DynamicIcon
                               name={pin.iconName}
-                              className={isVeiledSecret ? "h-2.5 w-2.5" : "h-5 w-5"}
+                              className={tone.iconClass}
                             />
                           )}
-                        </div>
+                        </MapMarkerPin>
 
                         {!isVeiledSecret && (
-                        <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100">
+                        <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100">
                           <div className="glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl">
                             <p className="text-[9px] uppercase tracking-[0.12em] text-realm-teal-soft">
                               {pin.category}

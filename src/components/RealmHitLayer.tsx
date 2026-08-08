@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { RealmSide } from "@/types/world";
 import { REALM_HIT_LABELS, REALM_HIT_PATHS } from "@/config/realmHitPaths";
 
@@ -38,12 +38,16 @@ const DEFAULT_NAMES: Record<RealmSide, string> = {
   company: "Guild Shore",
 };
 
+/** Ignore realm select when the pointer moved enough to count as a map pan. */
+const CLICK_MOVE_THRESHOLD_PX = 8;
+
 export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
   labels,
   selectedRealm,
   onSelectRealm,
 }) => {
   const [hovered, setHovered] = useState<RealmSide | null>(null);
+  const pointerDown = useRef<{ x: number; y: number } | null>(null);
 
   return (
     <svg
@@ -84,11 +88,23 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
               strokeWidth={active ? 2.5 : 1.5}
               vectorEffect="non-scaling-stroke"
               filter={active ? "url(#realm-hover-glow)" : undefined}
-              className="cursor-pointer transition-[fill,stroke-width] duration-200"
+              className="cursor-grab transition-[fill,stroke-width] duration-200 active:cursor-grabbing"
               onMouseEnter={() => setHovered(realm)}
               onMouseLeave={() => setHovered(null)}
+              onPointerDown={(e) => {
+                pointerDown.current = { x: e.clientX, y: e.clientY };
+              }}
               onClick={(e) => {
                 e.stopPropagation();
+                const start = pointerDown.current;
+                pointerDown.current = null;
+                if (start) {
+                  const moved = Math.hypot(
+                    e.clientX - start.x,
+                    e.clientY - start.y,
+                  );
+                  if (moved > CLICK_MOVE_THRESHOLD_PX) return;
+                }
                 onSelectRealm(realm);
               }}
             />
