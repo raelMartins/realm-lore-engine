@@ -33,6 +33,15 @@ import {
   type HireMotion,
   type UnitedPersist,
 } from "@/lib/hire";
+import { SecretToast } from "@/components/SecretToast";
+import { useKonami } from "@/lib/useKonami";
+import {
+  EASTER_EGG_PIN_ID,
+  filterVisiblePins,
+  loadRevealedSecrets,
+  revealSecret,
+  isSecretPin,
+} from "@/lib/secrets";
 import { Volume2, VolumeX, Music2, Music, Sparkles } from "lucide-react";
 
 type WorldApiResponse = CompanyLoreConfig & {
@@ -72,6 +81,10 @@ export default function Home() {
   const [hiddenPinId, setHiddenPinId] = useState<string | null>(null);
   const [hireBusy, setHireBusy] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [secretToast, setSecretToast] = useState<string | null>(null);
   const schedulingUrl = getSchedulingUrl();
 
   const refreshWorld = async () => {
@@ -98,6 +111,7 @@ export default function Home() {
         setWorldData(data);
         setWorldId(id);
         setExploredIds(loadExploredPinIds(id));
+        setRevealedSecrets(loadRevealedSecrets(id));
         // Adventurer always homes on the west isle; clear any stale east visit.
         const home = homeUnitedState();
         setUnitedState(home);
@@ -108,6 +122,7 @@ export default function Home() {
         if (!cancelled) {
           setWorldData(getCompanyData());
           setExploredIds(loadExploredPinIds("default"));
+          setRevealedSecrets(loadRevealedSecrets("default"));
           const home = homeUnitedState();
           setUnitedState(home);
           saveUnitedState("default", home);
@@ -272,8 +287,55 @@ export default function Home() {
     void returnAdventurerHome();
   };
 
+  const listPins = useMemo(() => {
+    if (!displayData) return [];
+    return filterVisiblePins(displayData.pins, revealedSecrets);
+  }, [displayData, revealedSecrets]);
+
+  const unlockEasterEgg = (source: "konami" | "map") => {
+    if (!displayData) return;
+    const pin = displayData.pins.find((p) => p.id === EASTER_EGG_PIN_ID);
+    if (!pin) return;
+
+    const already = revealedSecrets.has(EASTER_EGG_PIN_ID);
+    setRevealedSecrets((prev) =>
+      revealSecret(worldId, EASTER_EGG_PIN_ID, prev),
+    );
+
+    if (!already) {
+      setSecretToast(
+        source === "konami"
+          ? "Konami accepted — a secret node shimmers into view."
+          : "You noticed a faint glimmer on the northern ridge.",
+      );
+      window.setTimeout(() => setSecretToast(null), 3200);
+      setSpawnPinId(EASTER_EGG_PIN_ID);
+      window.setTimeout(() => setSpawnPinId(null), 900);
+      setConfettiOn(true);
+      window.setTimeout(() => setConfettiOn(false), 2200);
+    }
+
+    issueCamera({
+      type: "focus-pin",
+      pinId: EASTER_EGG_PIN_ID,
+      scale: 2.5,
+      durationMs: 520,
+    });
+    window.setTimeout(() => setCameraCommand(null), 600);
+
+    soundFx.playSelectSound();
+    setSelectedRealm(null);
+    setSelectedPin(pin);
+  };
+
+  useKonami(() => unlockEasterEgg("konami"), Boolean(displayData) && !hireBusy);
+
   const handleSelectPin = (pin: LorePin) => {
     if (placing || hireBusy) return;
+    if (isSecretPin(pin) && !revealedSecrets.has(pin.id)) {
+      unlockEasterEgg("map");
+      return;
+    }
     soundFx.playSelectSound();
     setSelectedRealm(null);
     setSelectedPin(pin);
@@ -347,7 +409,7 @@ export default function Home() {
       <div className="pointer-events-none absolute top-6 left-6 z-30 flex flex-col items-start gap-2">
         <div className="pointer-events-auto">
           <CommandPalette
-            pins={displayData.pins}
+            pins={listPins}
             onSelectPin={handleSelectPin}
             realmLabels={displayData.realmLabels}
           />
@@ -429,6 +491,7 @@ export default function Home() {
         hireBusy={hireBusy}
         hiddenPinId={hiddenPinId}
         cameraCommand={cameraCommand}
+        revealedSecretIds={revealedSecrets}
       />
 
       <GuildChartControls
@@ -453,7 +516,7 @@ export default function Home() {
 
       <RealmOverview
         realm={selectedRealm}
-        data={displayData}
+        data={{ ...displayData, pins: listPins }}
         onClose={() => setSelectedRealm(null)}
         onSelectPin={handleSelectPin}
       />
@@ -483,6 +546,8 @@ export default function Home() {
         onClose={() => setCalendarOpen(false)}
         schedulingUrl={schedulingUrl}
       />
+
+      <SecretToast message={secretToast} />
 
       <Confetti active={confettiOn} />
     </main>

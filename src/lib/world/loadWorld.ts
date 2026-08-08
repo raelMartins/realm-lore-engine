@@ -8,6 +8,11 @@ import { normalizeConfig, normalizePin } from '@/lib/getCompanyData';
 import { ensureSchema } from '@/lib/db/schema';
 import { getTursoClient, getWorldId } from '@/lib/db/turso';
 import { withQuestCalendarCta } from '@/lib/scheduling';
+import {
+  getDefaultEastPins,
+  getDefaultWorldMeta,
+  getStaticWestPins,
+} from '@/lib/world/staticWest';
 
 type TeamMember = NonNullable<CompanyLoreConfig['targetTeamMembers']>[number];
 

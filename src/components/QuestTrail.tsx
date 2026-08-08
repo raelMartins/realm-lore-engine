@@ -109,8 +109,12 @@ export const QuestTrail: React.FC<QuestTrailProps> = ({
   pins,
   united = false,
 }) => {
-  const adventurerPins = pins.filter((p) => p.realm === "adventurer");
-  const companyPins = pins.filter((p) => p.realm === "company");
+  const adventurerPins = pins.filter(
+    (p) => p.realm === "adventurer" && p.category !== "easter_egg",
+  );
+  const companyPins = pins.filter(
+    (p) => p.realm === "company" && p.category !== "easter_egg",
+  );
 
   if (adventurerPins.length < 2 && companyPins.length < 2) return null;
 

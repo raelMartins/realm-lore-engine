@@ -93,6 +93,21 @@ export const defaultWorldData: CompanyLoreConfig = {
         tags: ['Design Systems', 'Performance', 'DX', 'Accessibility'],
       },
     },
+    {
+      id: 'easter-egg-whispers',
+      title: 'Whispers in the Fog',
+      subtitle: 'A secret node of the realm',
+      category: 'easter_egg',
+      realm: 'adventurer',
+      iconName: 'Sparkles',
+      coordinates: { x: 36, y: 14 },
+      content: {
+        badge: 'Secret',
+        description:
+          'You found it — either by reading the wind (↑↑↓↓←→←→BA) or by noticing a faint glimmer on the northern ridge. Builders who hunt for delight tend to ship it, too.',
+        tags: ['Easter Egg', 'Curiosity', 'Konami'],
+      },
+    },
 
     // ── East isle: Guild realm ─────────────────────────────────────
     {

@@ -56,6 +56,8 @@ interface MapCanvasProps {
   hiddenPinId?: string | null;
   /** One-shot camera instructions for hire cinematic / restore. */
   cameraCommand?: CameraCommand | null;
+  /** Revealed easter-egg pin ids — others render as faint hotspots. */
+  revealedSecretIds?: Set<string>;
 }
 
 const CanvasControls = () => {
@@ -250,6 +252,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   hireBusy = false,
   hiddenPinId = null,
   cameraCommand = null,
+  revealedSecretIds,
 }) => {
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!placementMode || !onPlaceAttempt) return;
@@ -389,6 +392,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                             : "";
 
                     const isHidden = hiddenPinId === pin.id;
+                    const isSecret = pin.category === "easter_egg";
+                    const secretRevealed =
+                      !isSecret ||
+                      (revealedSecretIds?.has(pin.id) ?? false);
+                    const isVeiledSecret = isSecret && !secretRevealed;
 
                     return (
                       <button
@@ -397,6 +405,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         type="button"
                         data-pin-id={pin.id}
                         data-realm={pin.realm}
+                        data-secret={isSecret ? "true" : undefined}
+                        data-secret-revealed={
+                          isSecret ? String(secretRevealed) : undefined
+                        }
                         onClick={(e) => {
                           if (placementMode || hireBusy || isHidden) {
                             e.stopPropagation();
@@ -412,7 +424,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         style={{
                           left: `${pin.coordinates.x}%`,
                           top: `${pin.coordinates.y}%`,
-                          opacity: isHidden ? 0 : 1,
+                          opacity: isHidden ? 0 : isVeiledSecret ? 0.35 : 1,
                         }}
                         className={`group pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer focus:outline-none ${
                           isSelected ? "z-30 scale-125" : "hover:scale-110"
@@ -424,8 +436,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           united && isCompany
                             ? "ring-1 ring-teal-300/30"
                             : ""
-                        }`}
+                        } ${isVeiledSecret ? "z-[3]" : ""}`}
                         aria-hidden={isHidden}
+                        aria-label={
+                          isVeiledSecret ? "Faint glimmer on the ridge" : undefined
+                        }
+                        title={isVeiledSecret ? "…" : undefined}
                       >
                         <div
                           key={`${pin.id}-${
@@ -455,21 +471,27 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                               ? isCompany
                                 ? "bg-amber-300/60 opacity-80 animate-pulse"
                                 : "bg-teal-400/70 opacity-80 animate-pulse"
-                              : isCompany
-                                ? "bg-amber-200/25 opacity-0 group-hover:opacity-100"
-                                : "bg-teal-400/30 opacity-0 group-hover:opacity-100"
+                              : isVeiledSecret
+                                ? "bg-teal-300/20 opacity-60 animate-pulse"
+                                : isCompany
+                                  ? "bg-amber-200/25 opacity-0 group-hover:opacity-100"
+                                  : "bg-teal-400/30 opacity-0 group-hover:opacity-100"
                           }`}
                         />
 
                         <div
-                          className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border shadow-xl transition-all duration-300 ${
-                            isSelected
-                              ? isCompany
-                                ? "border-white/60 bg-gradient-to-br from-slate-100 to-amber-400 text-slate-900 shadow-amber-400/35"
-                                : "border-white/60 bg-gradient-to-br from-teal-300 to-teal-600 text-teal-950 shadow-teal-400/40"
-                              : isCompany
-                                ? "glass-btn border-amber-200/35 text-realm-mist group-hover:border-amber-300/55"
-                                : "glass-btn border-white/25 text-realm-teal-soft group-hover:border-teal-300/50"
+                          className={`relative flex items-center justify-center overflow-hidden rounded-full border shadow-xl transition-all duration-300 ${
+                            isVeiledSecret
+                              ? "h-5 w-5 border-teal-200/20 bg-teal-950/40 text-teal-200/50"
+                              : isSelected
+                                ? isCompany
+                                  ? "h-11 w-11 border-white/60 bg-gradient-to-br from-slate-100 to-amber-400 text-slate-900 shadow-amber-400/35"
+                                  : "h-11 w-11 border-white/60 bg-gradient-to-br from-teal-300 to-teal-600 text-teal-950 shadow-teal-400/40"
+                                : isCompany
+                                  ? "h-11 w-11 glass-btn border-amber-200/35 text-realm-mist group-hover:border-amber-300/55"
+                                  : isSecret
+                                    ? "h-11 w-11 glass-btn border-teal-300/40 text-teal-200 group-hover:border-teal-200/60"
+                                    : "h-11 w-11 glass-btn border-white/25 text-realm-teal-soft group-hover:border-teal-300/50"
                           }`}
                         >
                           {showAvatar && avatar ? (
@@ -483,11 +505,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           ) : (
                             <DynamicIcon
                               name={pin.iconName}
-                              className="h-5 w-5"
+                              className={isVeiledSecret ? "h-2.5 w-2.5" : "h-5 w-5"}
                             />
                           )}
                         </div>
 
+                        {!isVeiledSecret && (
                         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100">
                           <div className="glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl">
                             <p className="text-[9px] uppercase tracking-[0.12em] text-realm-teal-soft">
@@ -506,6 +529,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                             </p>
                           </div>
                         </div>
+                        )}
                         </div>
                       </button>
                     );
