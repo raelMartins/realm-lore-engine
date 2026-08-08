@@ -41,7 +41,13 @@ export interface LorePin {
     badge?: string;
     description: string;
     markdownBody?: string;
+    /**
+     * Character abilities / project metrics — label + 0–100 proficiency or score.
+     */
     stats?: AttributeStat[];
+    /**
+     * Character skillset chips / project tools.
+     */
     tags?: string[];
     externalLink?: {
       label: string;
@@ -52,6 +58,16 @@ export interface LorePin {
       actionType: 'email' | 'calendar' | 'modal' | 'hire';
       target: string;
     };
+    /** Character — ISO date (YYYY-MM-DD) when they joined the guild */
+    joinedAt?: string;
+    /** Project — ISO start date */
+    startDate?: string;
+    /** Project — ISO end date (omit or empty if ongoing) */
+    endDate?: string;
+    /** Achievement — ISO date unlocked */
+    achievedAt?: string;
+    /** Achievement — guild character pin ids who contributed */
+    contributorIds?: string[];
   };
 }
 

@@ -91,7 +91,9 @@ export type PlacementError =
 export function validateGuildPlacement(
   point: Point,
   existingGuildPins: Pick<LorePin, 'coordinates'>[],
+  options?: { checkSpacing?: boolean },
 ): PlacementError | null {
+  const checkSpacing = options?.checkSpacing !== false;
   if (
     !Number.isFinite(point.x) ||
     !Number.isFinite(point.y) ||
@@ -104,7 +106,10 @@ export function validateGuildPlacement(
   }
   if (existingGuildPins.length >= GUILD_PIN_CAP) return 'cap_reached';
   if (!isOnGuildLand(point)) return 'off_land';
-  if (isTooCloseToExisting(point, existingGuildPins)) return 'too_close';
+  // Spacing is enforced for seeds / spawn search; live charting may cluster.
+  if (checkSpacing && isTooCloseToExisting(point, existingGuildPins)) {
+    return 'too_close';
+  }
   return null;
 }
 

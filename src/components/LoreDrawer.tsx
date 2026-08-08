@@ -20,6 +20,8 @@ import { prefersReducedMotion } from "@/lib/hire";
 
 interface LoreDrawerProps {
   pin: LorePin | null;
+  /** Used to resolve achievement contributors */
+  pins?: LorePin[];
   onClose: () => void;
   onHire?: () => void;
   onOpenCalendar?: () => void;
@@ -107,14 +109,53 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 function tagsHeading(category: PinType): string {
-  if (category === "project") return "Stack & Concepts";
-  if (category === "character") return "Traits & Focus";
+  if (category === "project") return "Tools";
+  if (category === "character") return "Skillset";
   if (category === "achievement") return "Marks of Merit";
   return "Tags";
 }
 
+function statsHeading(category: PinType): string {
+  if (category === "project") return "Metrics";
+  return "Abilities";
+}
+
+function formatIsoDate(iso?: string): string | null {
+  if (!iso) return null;
+  const d = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function pinHasBack(pin: LorePin): boolean {
+  if (pin.category === "quest") return true;
+  if (pin.category === "easter_egg") {
+    return Boolean(
+      pin.content.stats?.length ||
+        pin.content.tags?.length ||
+        pin.content.markdownBody,
+    );
+  }
+  return Boolean(
+    pin.content.stats?.length ||
+      pin.content.tags?.length ||
+      pin.content.joinedAt ||
+      pin.content.startDate ||
+      pin.content.endDate ||
+      pin.content.achievedAt ||
+      pin.content.contributorIds?.length ||
+      pin.content.markdownBody ||
+      pin.category === "achievement",
+  );
+}
+
 export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   pin,
+  pins = [],
   onClose,
   onHire,
   onOpenCalendar,
@@ -237,13 +278,11 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   const avatar = pin ? getAvatarById(pin.avatarId) : undefined;
   const typeMeta = pin ? TYPE_META[pin.category] : null;
   const TypeIcon = typeMeta?.Icon ?? Sparkles;
-  const hasBackDetail = Boolean(
-    pin &&
-      ((pin.content.stats && pin.content.stats.length > 0) ||
-        (pin.content.tags && pin.content.tags.length > 0) ||
-        pin.category === "achievement" ||
-        pin.content.markdownBody),
-  );
+  const hasBackDetail = Boolean(pin && pinHasBack(pin));
+
+  const contributors = pin?.content.contributorIds
+    ?.map((id) => pins.find((p) => p.id === id))
+    .filter((p): p is LorePin => Boolean(p));
 
   const toggleFlip = () => {
     if (!hasBackDetail) return;
@@ -511,84 +550,180 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                 </div>
 
                 <div className="parchment-scroll relative z-10 flex-1 overflow-y-auto px-4 pb-5 pt-3">
-                  {pin.content.stats && pin.content.stats.length > 0 && (
-                    <div>
-                      <h3 className="mb-2.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
-                        <Sparkles className="h-3 w-3" />
-                        Skills & Proficiency
-                      </h3>
-                      <div className="space-y-2.5">
-                        {pin.content.stats.map((stat, index) => (
-                          <div key={stat.label}>
-                            <div className="mb-1 flex items-baseline justify-between">
-                              <span className="text-xs text-[var(--ink-soft)]">
-                                {stat.label}
-                              </span>
-                              <span className="font-mono text-[10px] font-semibold text-[var(--seal)]">
-                                {stat.value}
-                                <span className="text-[var(--ink-faint)]">%</span>
-                              </span>
-                            </div>
-                            <div className="parchment-stat-track">
-                              <motion.div
-                                initial={false}
-                                animate={{
-                                  width: flipped ? `${stat.value}%` : 0,
-                                }}
-                                transition={{
-                                  duration: 0.85,
-                                  delay: flipped ? index * 0.05 : 0,
-                                  ease: [0.22, 1, 0.36, 1],
-                                }}
-                                className="parchment-stat-fill"
-                              />
-                            </div>
+                  {pin.category === "quest" ? (
+                    <div className="flex min-h-[220px] flex-1 flex-col items-center justify-center gap-3 py-8">
+                      <span className="parchment-icon flex h-20 w-20 rounded-2xl">
+                        <Scroll className="h-9 w-9" />
+                      </span>
+                      <p className="font-display text-sm tracking-wide text-[var(--ink)]">
+                        Quest
+                      </p>
+                      <p className="max-w-[16rem] text-center text-xs leading-relaxed text-[var(--ink-faint)]">
+                        The path is written on the front. The seal alone remains
+                        here.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {pin.content.stats && pin.content.stats.length > 0 && (
+                        <div>
+                          <h3 className="mb-2.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
+                            <Sparkles className="h-3 w-3" />
+                            {statsHeading(pin.category)}
+                          </h3>
+                          <div className="space-y-2.5">
+                            {pin.content.stats.map((stat, index) => (
+                              <div key={`${stat.label}-${index}`}>
+                                <div className="mb-1 flex items-baseline justify-between">
+                                  <span className="text-xs text-[var(--ink-soft)]">
+                                    {stat.label}
+                                  </span>
+                                  <span className="font-mono text-[10px] font-semibold text-[var(--seal)]">
+                                    {stat.value}
+                                    {pin.category !== "project" && (
+                                      <span className="text-[var(--ink-faint)]">
+                                        %
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="parchment-stat-track">
+                                  <motion.div
+                                    initial={false}
+                                    animate={{
+                                      width: flipped ? `${stat.value}%` : 0,
+                                    }}
+                                    transition={{
+                                      duration: 0.85,
+                                      delay: flipped ? index * 0.05 : 0,
+                                      ease: [0.22, 1, 0.36, 1],
+                                    }}
+                                    className="parchment-stat-fill"
+                                  />
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      )}
 
-                  {pin.category === "achievement" && (
-                    <div
-                      className={`${pin.content.stats?.length ? "mt-4" : ""} rounded-xl border border-[var(--seal)]/25 bg-[var(--seal)]/8 px-3 py-2.5 text-center`}
-                    >
-                      <Trophy className="mx-auto h-5 w-5 text-[var(--seal)]" />
-                      <p className="mt-1.5 font-display text-sm text-[var(--ink)]">
-                        {pin.content.badge || "Achievement Unlocked"}
-                      </p>
-                      <p className="mt-1 text-xs leading-relaxed text-[var(--ink-soft)]">
-                        {pin.subtitle}
-                      </p>
-                    </div>
-                  )}
+                      {pin.content.tags && pin.content.tags.length > 0 && (
+                        <div
+                          className={
+                            pin.content.stats?.length ? "mt-4" : undefined
+                          }
+                        >
+                          <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
+                            {tagsHeading(pin.category)}
+                          </h3>
+                          <div className="flex flex-wrap gap-1.5">
+                            {pin.content.tags.map((tag) => (
+                              <span key={tag} className="parchment-tag">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                  {pin.content.tags && pin.content.tags.length > 0 && (
-                    <div
-                      className={
-                        pin.content.stats?.length ||
-                        pin.category === "achievement"
-                          ? "mt-4"
-                          : ""
-                      }
-                    >
-                      <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
-                        {tagsHeading(pin.category)}
-                      </h3>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pin.content.tags.map((tag) => (
-                          <span key={tag} className="parchment-tag">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                      {pin.category === "character" &&
+                        formatIsoDate(pin.content.joinedAt) && (
+                          <div
+                            className={
+                              pin.content.stats?.length ||
+                              pin.content.tags?.length
+                                ? "mt-4"
+                                : undefined
+                            }
+                          >
+                            <h3 className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
+                              Joined the guild
+                            </h3>
+                            <p className="text-sm text-[var(--ink-soft)]">
+                              {formatIsoDate(pin.content.joinedAt)}
+                            </p>
+                          </div>
+                        )}
 
-                  {pin.content.markdownBody && (
-                    <div className="parchment-body mt-4 rounded-xl p-3 text-sm leading-relaxed whitespace-pre-wrap">
-                      {pin.content.markdownBody}
-                    </div>
+                      {pin.category === "project" &&
+                        (pin.content.startDate || pin.content.endDate) && (
+                          <div
+                            className={
+                              pin.content.stats?.length ||
+                              pin.content.tags?.length
+                                ? "mt-4"
+                                : undefined
+                            }
+                          >
+                            <h3 className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
+                              Timeline
+                            </h3>
+                            <p className="text-sm text-[var(--ink-soft)]">
+                              {formatIsoDate(pin.content.startDate) ?? "—"}
+                              {" → "}
+                              {formatIsoDate(pin.content.endDate) ?? "Ongoing"}
+                            </p>
+                          </div>
+                        )}
+
+                      {pin.category === "achievement" && (
+                        <>
+                          <div
+                            className={`${
+                              pin.content.stats?.length ||
+                              pin.content.tags?.length
+                                ? "mt-4"
+                                : ""
+                            } rounded-xl border border-[var(--seal)]/25 bg-[var(--seal)]/8 px-3 py-2.5 text-center`}
+                          >
+                            <Trophy className="mx-auto h-5 w-5 text-[var(--seal)]" />
+                            <p className="mt-1.5 font-display text-sm text-[var(--ink)]">
+                              {pin.content.badge || "Achievement Unlocked"}
+                            </p>
+                            {formatIsoDate(pin.content.achievedAt) && (
+                              <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                                {formatIsoDate(pin.content.achievedAt)}
+                              </p>
+                            )}
+                          </div>
+
+                          {contributors && contributors.length > 0 && (
+                            <div className="mt-4">
+                              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
+                                Contributors
+                              </h3>
+                              <div className="flex flex-wrap gap-1.5">
+                                {contributors.map((ch) => {
+                                  const av = getAvatarById(ch.avatarId);
+                                  return (
+                                    <span
+                                      key={ch.id}
+                                      className="parchment-tag inline-flex items-center gap-1.5 !rounded-full !py-1 !pl-1 !pr-2.5"
+                                    >
+                                      {av ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                          src={av.src}
+                                          alt=""
+                                          className="h-5 w-5 rounded-full object-cover"
+                                        />
+                                      ) : null}
+                                      {ch.title}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {pin.content.markdownBody && (
+                        <div className="parchment-body mt-4 rounded-xl p-3 text-sm leading-relaxed whitespace-pre-wrap">
+                          {pin.content.markdownBody}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </motion.div>

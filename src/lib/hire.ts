@@ -34,6 +34,8 @@ export interface UnitedPersist {
   united: boolean;
   motion?: HireMotion;
   migratedCoords?: Point;
+  /** ISO date (YYYY-MM-DD) when the alliance was forged */
+  joinedAt?: string;
 }
 
 export function unitedStorageKey(worldId: string): string {
@@ -50,6 +52,8 @@ export function loadUnitedState(worldId: string): UnitedPersist {
       united: Boolean(parsed.united),
       motion: parsed.motion,
       migratedCoords: parsed.migratedCoords,
+      joinedAt:
+        typeof parsed.joinedAt === 'string' ? parsed.joinedAt : undefined,
     };
   } catch {
     return { united: false };
@@ -127,8 +131,21 @@ export function applyUnitedToPins(
       subtitle: pin.subtitle.includes('Allied')
         ? pin.subtitle
         : `${pin.subtitle} · Allied`,
+      content: {
+        ...pin.content,
+        joinedAt: united.joinedAt ?? pin.content.joinedAt,
+      },
     };
   });
+}
+
+/** Today's date as YYYY-MM-DD in local time. */
+export function todayIsoDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export function prefersReducedMotion(): boolean {

@@ -31,6 +31,7 @@ import {
   homeUnitedState,
   prefersReducedMotion,
   saveUnitedState,
+  todayIsoDate,
   type HireMotion,
   type UnitedPersist,
 } from "@/lib/hire";
@@ -292,11 +293,14 @@ export default function Home() {
     const spawn = findAllianceSpawn(
       worldData.pins.filter((p) => p.realm === "company"),
     );
-    setUnitedState({
+    const allied: UnitedPersist = {
       united: true,
       motion,
       migratedCoords: spawn,
-    });
+      joinedAt: todayIsoDate(),
+    };
+    setUnitedState(allied);
+    saveUnitedState(worldId, allied);
     await sleep(60);
 
     // 5) Camera pans to east pin (still hidden)
@@ -441,7 +445,9 @@ export default function Home() {
   const handlePlaceAttempt = (coords: { x: number; y: number }) => {
     if (!worldData) return;
     const guildPins = displayPins.filter((p) => p.realm === "company");
-    const error = validateGuildPlacement(coords, guildPins);
+    const error = validateGuildPlacement(coords, guildPins, {
+      checkSpacing: false,
+    });
     if (error) {
       setPlaceHint(PLACEMENT_ERROR_MESSAGE[error]);
       soundFx.playHoverSound();
@@ -652,6 +658,9 @@ export default function Home() {
         onClearDraft={() => setDraft(null)}
         onPinCreated={(pinId) => void handlePinCreated(pinId)}
         placeHint={placeHint}
+        guildCharacters={listPins.filter(
+          (p) => p.realm === "company" && p.category === "character",
+        )}
       />
 
       <RealmOverview
@@ -663,6 +672,7 @@ export default function Home() {
 
       <LoreDrawer
         pin={selectedPin}
+        pins={listPins}
         onClose={() => setSelectedPin(null)}
         onHire={handleHire}
         onOpenCalendar={() => setCalendarOpen(true)}
