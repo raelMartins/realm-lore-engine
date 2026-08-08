@@ -17,6 +17,7 @@ import {
   SHOW_MAP_CALIBRATION,
 } from "@/lib/mapCoordinates";
 import { RealmSide } from "@/types/world";
+import { getAvatarById } from "@/config/avatars";
 
 interface MapCanvasProps {
   data: CompanyLoreConfig;
@@ -256,6 +257,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   {data.pins.map((pin) => {
                     const isSelected = selectedPinId === pin.id;
                     const isCompany = pin.realm === "company";
+                    const avatar = getAvatarById(pin.avatarId);
+                    const showAvatar =
+                      pin.category === "character" && Boolean(avatar);
 
                     return (
                       <button
@@ -286,7 +290,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         />
 
                         <div
-                          className={`relative flex h-11 w-11 items-center justify-center rounded-full border shadow-xl transition-all duration-300 ${
+                          className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border shadow-xl transition-all duration-300 ${
                             isSelected
                               ? isCompany
                                 ? "border-white/60 bg-gradient-to-br from-slate-100 to-amber-400 text-slate-900 shadow-amber-400/35"
@@ -296,15 +300,27 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                                 : "glass-btn border-white/25 text-realm-teal-soft group-hover:border-teal-300/50"
                           }`}
                         >
-                          <DynamicIcon
-                            name={pin.iconName}
-                            className="h-5 w-5"
-                          />
+                          {showAvatar && avatar ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={avatar.src}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              draggable={false}
+                            />
+                          ) : (
+                            <DynamicIcon
+                              name={pin.iconName}
+                              className="h-5 w-5"
+                            />
+                          )}
                         </div>
 
                         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100">
                           <div className="glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl">
                             <p className="text-[9px] uppercase tracking-[0.12em] text-realm-teal-soft">
+                              {pin.category}
+                              {" · "}
                               {pin.realm === "company"
                                 ? data.realmLabels?.company || "Guild Shore"
                                 : data.realmLabels?.adventurer ||

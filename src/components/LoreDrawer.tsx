@@ -2,9 +2,18 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LorePin } from "@/types/world";
-import { X, ExternalLink, Mail, Sparkles } from "lucide-react";
+import { LorePin, PinType } from "@/types/world";
+import {
+  X,
+  ExternalLink,
+  Mail,
+  Sparkles,
+  Boxes,
+  Trophy,
+  Scroll,
+} from "lucide-react";
 import * as Icons from "lucide-react";
+import { getAvatarById } from "@/config/avatars";
 
 interface LoreDrawerProps {
   pin: LorePin | null;
@@ -18,6 +27,17 @@ type CardPlacement =
 const CARD_WIDTH = 300;
 const GAP = 14;
 const PAD = 14;
+
+const TYPE_META: Record<
+  PinType,
+  { label: string; Icon: React.ComponentType<{ className?: string }> }
+> = {
+  character: { label: "Character", Icon: Icons.User },
+  project: { label: "Project", Icon: Boxes },
+  achievement: { label: "Achievement", Icon: Trophy },
+  quest: { label: "Quest", Icon: Scroll },
+  easter_egg: { label: "Secret", Icon: Sparkles },
+};
 
 const DynamicIcon = ({
   name,
@@ -134,6 +154,10 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
       ? "parchment-card fixed z-50 flex max-h-[min(68vh,480px)] flex-col overflow-hidden rounded-[1.25rem]"
       : "parchment-card fixed top-1/2 left-1/2 z-50 flex max-h-[min(68vh,480px)] w-[min(100%-2rem,300px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.25rem]";
 
+  const avatar = pin ? getAvatarById(pin.avatarId) : undefined;
+  const typeMeta = pin ? TYPE_META[pin.category] : null;
+  const TypeIcon = typeMeta?.Icon ?? Sparkles;
+
   return (
     <AnimatePresence>
       {pin && (
@@ -172,12 +196,22 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
           >
             <div className="relative z-10 flex items-start justify-between gap-2.5 border-b parchment-rule px-4 pb-3 pt-4">
               <div className="flex min-w-0 items-start gap-2.5">
-                <span className="parchment-icon mt-0.5 flex h-8 w-8 shrink-0 rounded-xl">
-                  <DynamicIcon name={pin.iconName} className="h-3.5 w-3.5" />
-                </span>
+                {pin.category === "character" && avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatar.src}
+                    alt=""
+                    className="mt-0.5 h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-[var(--seal)]/35"
+                  />
+                ) : (
+                  <span className="parchment-icon mt-0.5 flex h-8 w-8 shrink-0 rounded-xl">
+                    <DynamicIcon name={pin.iconName} className="h-3.5 w-3.5" />
+                  </span>
+                )}
                 <div className="min-w-0">
-                  <span className="parchment-pill">
-                    {pin.content.badge || pin.category}
+                  <span className="parchment-pill inline-flex items-center gap-1">
+                    <TypeIcon className="h-2.5 w-2.5" />
+                    {pin.content.badge || typeMeta?.label || pin.category}
                   </span>
                   <h2
                     id="lore-title"
@@ -206,46 +240,61 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
                 {pin.content.description}
               </div>
 
-              {pin.content.stats && pin.content.stats.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="mb-2.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
-                    <Sparkles className="h-3 w-3" />
-                    Attributes & Proficiency
-                  </h3>
-                  <div className="space-y-2.5">
-                    {pin.content.stats.map((stat, index) => (
-                      <div key={stat.label}>
-                        <div className="mb-1 flex items-baseline justify-between">
-                          <span className="text-xs text-[var(--ink-soft)]">
-                            {stat.label}
-                          </span>
-                          <span className="font-mono text-[10px] font-semibold text-[var(--seal)]">
-                            {stat.value}
-                            <span className="text-[var(--ink-faint)]">%</span>
-                          </span>
+              {pin.category === "character" &&
+                pin.content.stats &&
+                pin.content.stats.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="mb-2.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
+                      <Sparkles className="h-3 w-3" />
+                      Attributes & Proficiency
+                    </h3>
+                    <div className="space-y-2.5">
+                      {pin.content.stats.map((stat, index) => (
+                        <div key={stat.label}>
+                          <div className="mb-1 flex items-baseline justify-between">
+                            <span className="text-xs text-[var(--ink-soft)]">
+                              {stat.label}
+                            </span>
+                            <span className="font-mono text-[10px] font-semibold text-[var(--seal)]">
+                              {stat.value}
+                              <span className="text-[var(--ink-faint)]">%</span>
+                            </span>
+                          </div>
+                          <div className="parchment-stat-track">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${stat.value}%` }}
+                              transition={{
+                                duration: 0.9,
+                                delay: index * 0.06,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                              className="parchment-stat-fill"
+                            />
+                          </div>
                         </div>
-                        <div className="parchment-stat-track">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${stat.value}%` }}
-                            transition={{
-                              duration: 0.9,
-                              delay: index * 0.06,
-                              ease: [0.22, 1, 0.36, 1],
-                            }}
-                            className="parchment-stat-fill"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+                )}
+
+              {pin.category === "achievement" && (
+                <div className="mt-4 rounded-xl border border-[var(--seal)]/25 bg-[var(--seal)]/8 px-3 py-2.5 text-center">
+                  <Trophy className="mx-auto h-5 w-5 text-[var(--seal)]" />
+                  <p className="mt-1.5 font-display text-sm text-[var(--ink)]">
+                    {pin.content.badge || "Achievement Unlocked"}
+                  </p>
                 </div>
               )}
 
               {pin.content.tags && pin.content.tags.length > 0 && (
                 <div className="mt-4">
                   <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
-                    Key Tech & Concepts
+                    {pin.category === "project"
+                      ? "Stack & Concepts"
+                      : pin.category === "character"
+                        ? "Traits & Focus"
+                        : "Tags"}
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {pin.content.tags.map((tag) => (
