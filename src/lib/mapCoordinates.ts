@@ -32,7 +32,7 @@ export const MAP_ASPECT_RATIO_CSS = `${MAP_IMAGE_WIDTH} / ${MAP_IMAGE_HEIGHT}`;
  * Equivalent to: width = min(100vw, 100vh * aspect), height follows ratio.
  */
 export const MAP_STAGE_SIZE_STYLE: CSSProperties = {
-  width: `min(100vw, calc(100vh * ${MAP_ASPECT_RATIO}))`,
+  width: `min(100dvw, 100vw, calc(100dvh * ${MAP_ASPECT_RATIO}), calc(100vh * ${MAP_ASPECT_RATIO}))`,
   aspectRatio: MAP_ASPECT_RATIO_CSS,
 };
 

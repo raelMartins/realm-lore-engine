@@ -63,7 +63,7 @@ export const RealmOverview: React.FC<RealmOverviewProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.97 }}
             transition={{ type: "spring", damping: 26, stiffness: 320 }}
-            className="glass-panel-strong fixed top-1/2 left-1/2 z-50 flex max-h-[min(72vh,520px)] w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
+            className="glass-panel-strong fixed top-1/2 left-1/2 z-50 flex max-h-[min(85dvh,72vh,520px)] w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
           >
             <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 pb-3.5 pt-5">
               <div className="min-w-0">

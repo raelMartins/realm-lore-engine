@@ -36,6 +36,7 @@ import {
   type UnitedPersist,
 } from "@/lib/hire";
 import { SecretToast } from "@/components/SecretToast";
+import { LandscapeGate } from "@/components/LandscapeGate";
 import { useKonami } from "@/lib/useKonami";
 import {
   EASTER_EGG_PIN_ID,
@@ -477,7 +478,26 @@ export default function Home() {
 
   if (!displayData) {
     return (
-      <main className="realm-atmosphere relative flex h-screen w-full items-center justify-center overflow-hidden">
+      <main className="realm-atmosphere relative flex h-dvh w-full items-center justify-center overflow-hidden">
+        <LandscapeGate />
+        <div
+          id="landscape-gate-fallback"
+          className="landscape-gate fixed inset-0 z-[100] flex-col items-center justify-center gap-5 px-8 text-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="landscape-gate-fallback-title"
+        >
+          <h2
+            id="landscape-gate-fallback-title"
+            className="font-display text-xl tracking-wide text-realm-silver"
+          >
+            Rotate to explore
+          </h2>
+          <p className="max-w-[18rem] text-sm leading-relaxed text-realm-mist/85">
+            This realm is built for landscape. Turn your device sideways to chart
+            the map.
+          </p>
+        </div>
         <p className="font-display text-sm tracking-[0.2em] text-realm-mist/80 uppercase">
           Charting the realm…
         </p>
@@ -487,11 +507,31 @@ export default function Home() {
 
   return (
     <main
-      className={`realm-atmosphere relative h-screen w-full overflow-hidden ${
+      className={`realm-atmosphere relative h-dvh w-full overflow-hidden ${
         unitedState.united ? "realm-united" : ""
       }`}
       aria-busy={hireBusy || undefined}
     >
+      <LandscapeGate />
+      <div
+        id="landscape-gate-fallback"
+        className="landscape-gate fixed inset-0 z-[100] flex-col items-center justify-center gap-5 px-8 text-center"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="landscape-gate-fallback-title"
+      >
+        <h2
+          id="landscape-gate-fallback-title"
+          className="font-display text-xl tracking-wide text-realm-silver"
+        >
+          Rotate to explore
+        </h2>
+        <p className="max-w-[18rem] text-sm leading-relaxed text-realm-mist/85">
+          This realm is built for landscape. Turn your device sideways to chart
+          the map.
+        </p>
+      </div>
+      <div id="realm-app" className="contents">
       {hireBusy && (
         <div
           className="fixed inset-0 z-[70]"
@@ -499,7 +539,7 @@ export default function Home() {
           aria-hidden
         />
       )}
-      <div className="pointer-events-none absolute top-6 left-6 z-30">
+      <div className="pointer-events-none absolute z-30 hud-safe-tl">
         <div className="pointer-events-auto">
           <CommandPalette
             pins={listPins}
@@ -509,18 +549,20 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute top-5 left-1/2 z-30 -translate-x-1/2">
+      <div className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2 hud-safe-tc">
         <div className="pointer-events-auto flex items-center gap-2">
           {!allianceForged ? (
             <button
               type="button"
               onClick={handleHire}
               disabled={hireBusy}
-              className="glass-panel glass-btn flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
+              className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
               title="Forge alliance"
             >
               <Sparkles className="h-4 w-4 text-amber-200/90" />
-              {hireBusy ? "Crossing…" : "Forge Alliance"}
+              <span className="hud-pill-label">
+                {hireBusy ? "Crossing…" : "Forge Alliance"}
+              </span>
             </button>
           ) : (
             <>
@@ -529,23 +571,23 @@ export default function Home() {
                   type="button"
                   onClick={() => setCalendarOpen(true)}
                   disabled={hireBusy}
-                  className="glass-panel glass-btn flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
+                  className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
                   title="Chart a meeting"
                 >
                   <CalendarDays className="h-4 w-4 text-amber-200/90" />
-                  Chart a meeting
+                  <span className="hud-pill-label">Chart a meeting</span>
                 </button>
               ) : (
-                <div className="glass-panel flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist">
+                <div className="glass-panel hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist">
                   <Sparkles className="h-4 w-4 text-teal-300" />
-                  Alliance Forged
+                  <span className="hud-pill-label">Alliance Forged</span>
                 </div>
               )}
               <button
                 type="button"
                 onClick={() => void unforgeAlliance()}
                 disabled={hireBusy}
-                className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver disabled:opacity-50"
+                className="glass-panel glass-btn hud-compact-icon rounded-full p-2.5 text-realm-mist hover:text-realm-silver disabled:opacity-50"
                 title="Unforge alliance"
                 aria-label="Unforge alliance"
               >
@@ -556,7 +598,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute top-6 right-6 z-30">
+      <div className="pointer-events-none absolute z-30 hud-safe-tr">
         <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
           <span
             className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse ${
@@ -571,12 +613,12 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-6 left-6 z-30">
+      <div className="pointer-events-none absolute z-30 hud-safe-bl">
         <div className="pointer-events-auto flex flex-col gap-2">
           <button
             type="button"
             onClick={handleToggleMute}
-            className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
+            className="glass-panel glass-btn hud-compact-icon rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
             title={isMuted ? "Unmute sound effects" : "Mute sound effects"}
           >
             {isMuted ? (
@@ -589,7 +631,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => void handleToggleMusic()}
-            className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
+            className="glass-panel glass-btn hud-compact-icon rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
             title={musicOn ? "Mute music" : "Play music"}
           >
             {musicOn ? (
@@ -601,7 +643,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-6 left-1/2 z-30 w-[min(100%-2rem,280px)] -translate-x-1/2">
+      <div className="pointer-events-none absolute left-1/2 z-30 w-[min(100%-2rem,280px)] -translate-x-1/2 hud-safe-bc">
         <ExplorationProgress
           explored={exploration.explored}
           total={exploration.total}
@@ -696,6 +738,7 @@ export default function Home() {
         durationMs={confettiHeavy ? 6500 : 3200}
         intensity={confettiHeavy ? "heavy" : "normal"}
       />
+      </div>
     </main>
   );
 }

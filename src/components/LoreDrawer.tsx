@@ -272,8 +272,8 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
 
   const cardPositionClass =
     placement?.mode === "anchored"
-      ? "fixed z-50 max-h-[min(72vh,520px)]"
-      : "fixed top-1/2 left-1/2 z-50 w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 max-h-[min(72vh,520px)]";
+      ? "fixed z-50 max-h-[min(85dvh,72vh,520px)]"
+      : "fixed top-1/2 left-1/2 z-50 w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 max-h-[min(85dvh,72vh,520px)]";
 
   const avatar = pin ? getAvatarById(pin.avatarId) : undefined;
   const typeMeta = pin ? TYPE_META[pin.category] : null;
@@ -404,7 +404,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
             <div className="relative [perspective:1200px]">
               {/* ── Front (defines shell size; stays in layout while flipped) ── */}
               <motion.div
-                className={`parchment-card flex max-h-[min(72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
+                className={`parchment-card flex max-h-[min(85dvh,72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
                   hasBackDetail ? "cursor-pointer" : ""
                 }`}
                 initial={false}
@@ -504,7 +504,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
 
               {/* ── Back overlays the same box (must beat .parchment-card { position: relative }) ── */}
               <motion.div
-                className={`parchment-card flex max-h-[min(72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
+                className={`parchment-card flex max-h-[min(85dvh,72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
                   hasBackDetail ? "cursor-pointer" : ""
                 }`}
                 initial={false}

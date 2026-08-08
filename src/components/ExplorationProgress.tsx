@@ -22,7 +22,7 @@ export const ExplorationProgress: React.FC<ExplorationProgressProps> = ({
 
   return (
     <div
-      className="glass-panel pointer-events-none flex w-[min(100vw-2rem,280px)] flex-col gap-1.5 rounded-2xl px-3.5 py-2.5"
+      className="exploration-progress-panel glass-panel pointer-events-none flex w-[min(100vw-2rem,280px)] flex-col gap-1.5 rounded-2xl px-3.5 py-2.5"
       role="status"
       aria-label={`Realm exploration ${safeExplored} of ${safeTotal}`}
     >

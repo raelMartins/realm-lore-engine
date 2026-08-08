@@ -41,6 +41,8 @@
 html,
 body {
   height: 100%;
+  height: 100dvh;
+  overscroll-behavior: none;
 }
 
 body {
@@ -193,6 +195,147 @@ body {
     radial-gradient(ellipse 60% 40% at 85% 20%, rgba(148, 163, 184, 0.06), transparent 50%),
     radial-gradient(ellipse 70% 60% at 50% 100%, rgba(13, 148, 136, 0.07), transparent 55%),
     var(--realm-void);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* Phone portrait — rotate gate */
+.landscape-gate {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 35%, rgba(45, 212, 191, 0.12), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(13, 148, 136, 0.1), transparent 55%),
+    var(--realm-void);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+@keyframes landscape-gate-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.landscape-gate-spin {
+  animation: landscape-gate-spin 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landscape-gate-spin {
+    animation: none;
+  }
+}
+
+/* No-JS fallback: phone portrait only (JS LandscapeGate hides this on mount) */
+@media (orientation: portrait) and (max-width: 767px) {
+  #landscape-gate-fallback:not([hidden]) {
+    display: flex;
+  }
+}
+
+#landscape-gate-fallback {
+  display: none;
+}
+
+/* Safe-area HUD offsets */
+.hud-safe-tl {
+  top: max(1.25rem, env(safe-area-inset-top, 0px));
+  left: max(1.25rem, env(safe-area-inset-left, 0px));
+}
+
+.hud-safe-tr {
+  top: max(1.25rem, env(safe-area-inset-top, 0px));
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+.hud-safe-tc {
+  top: max(1rem, env(safe-area-inset-top, 0px));
+}
+
+.hud-safe-bl {
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  left: max(1.25rem, env(safe-area-inset-left, 0px));
+}
+
+.hud-safe-br {
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+.hud-safe-bc {
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+}
+
+.hud-safe-b {
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-height: 500px) {
+  .hud-safe-tl,
+  .hud-safe-tr {
+    top: max(0.5rem, env(safe-area-inset-top, 0px));
+  }
+
+  .hud-safe-tl {
+    left: max(0.5rem, env(safe-area-inset-left, 0px));
+  }
+
+  .hud-safe-tr {
+    right: max(0.5rem, env(safe-area-inset-right, 0px));
+  }
+
+  .hud-safe-tc {
+    top: max(0.4rem, env(safe-area-inset-top, 0px));
+  }
+
+  .hud-safe-bl,
+  .hud-safe-br,
+  .hud-safe-bc,
+  .hud-safe-b {
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .hud-safe-bl {
+    left: max(0.5rem, env(safe-area-inset-left, 0px));
+  }
+
+  .hud-safe-br {
+    right: max(0.5rem, env(safe-area-inset-right, 0px));
+  }
+
+  .hud-compact-pill {
+    padding: 0.4rem 0.75rem !important;
+    font-size: 0.65rem !important;
+  }
+
+  .hud-compact-pill .hud-pill-label {
+    display: none;
+  }
+
+  .hud-compact-icon {
+    padding: 0.4rem !important;
+  }
+
+  .hud-compact-icon svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .exploration-progress-panel {
+    padding: 0.4rem 0.65rem !important;
+    gap: 0.25rem !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .map-pin-hit {
+    padding: 10px 12px 4px;
+    margin: -10px -12px -4px;
+  }
 }
 
 /* Animated dashed quest routes on the map */

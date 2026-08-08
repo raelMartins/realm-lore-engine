@@ -78,11 +78,11 @@ const CanvasControls = () => {
   const { zoomIn, zoomOut, resetTransform } = useControls();
 
   return (
-    <div className="glass-panel pointer-events-auto absolute bottom-6 right-6 z-30 flex flex-col gap-1.5 rounded-2xl p-1.5">
+    <div className="glass-panel pointer-events-auto absolute z-30 flex flex-col gap-1.5 rounded-2xl p-1.5 hud-safe-br">
       <button
         type="button"
         onClick={() => zoomIn()}
-        className="glass-btn rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
+        className="glass-btn hud-compact-icon rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
         title="Zoom In"
       >
         <ZoomIn className="h-5 w-5" />
@@ -90,7 +90,7 @@ const CanvasControls = () => {
       <button
         type="button"
         onClick={() => zoomOut()}
-        className="glass-btn rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
+        className="glass-btn hud-compact-icon rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
         title="Zoom Out"
       >
         <ZoomOut className="h-5 w-5" />
@@ -98,7 +98,7 @@ const CanvasControls = () => {
       <button
         type="button"
         onClick={() => resetTransform(400, "easeOut")}
-        className="glass-btn rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
+        className="glass-btn hud-compact-icon rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
         title="Reset Map View"
       >
         <RotateCcw className="h-5 w-5" />
@@ -616,7 +616,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           top: `${pin.coordinates.y}%`,
                           opacity: isHidden ? 0 : isVeiledSecret ? 0.35 : 1,
                         }}
-                        className={`group pointer-events-auto absolute z-10 origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none ${
+                        className={`map-pin-hit group pointer-events-auto absolute z-10 origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none ${
                           isSelected ? "z-30 scale-125" : "hover:scale-110"
                         } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-all duration-300"} ${
                           placementMode || hireBusy || isHidden

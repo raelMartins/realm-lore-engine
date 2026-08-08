@@ -418,24 +418,24 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
 
   return (
     <>
-      <div className="pointer-events-auto absolute bottom-6 right-24 z-30 flex flex-col gap-2">
+      <div className="pointer-events-auto absolute z-30 flex flex-col gap-2 hud-safe-b right-[calc(5.5rem+env(safe-area-inset-right,0px))] max-[500px]:right-[calc(4.75rem+env(safe-area-inset-right,0px))]">
         {!unlocked ? (
           <button
             type="button"
             onClick={() => setShowUnlock(true)}
-            className="glass-panel glass-btn flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver"
+            className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver"
           >
             <KeyRound className="h-4 w-4 text-amber-200/80" />
-            Unlock guild chart
+            <span className="hud-pill-label">Unlock guild chart</span>
           </button>
         ) : !placing && !draft ? (
           <button
             type="button"
             onClick={onStartPlace}
-            className="glass-panel glass-btn flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver"
+            className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver"
           >
             <MapPinPlus className="h-4 w-4 text-teal-300" />
-            Chart a pin
+            <span className="hud-pill-label">Chart a pin</span>
           </button>
         ) : placing ? (
           <div className="glass-panel-strong max-w-[220px] rounded-2xl px-3.5 py-3 text-xs text-realm-mist">
@@ -541,7 +541,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.97 }}
               onSubmit={(e) => void handleCreate(e)}
-              className="glass-panel-strong fixed top-1/2 left-1/2 z-[70] flex max-h-[min(92vh,620px)] w-[min(100%-1.5rem,760px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
+              className="glass-panel-strong fixed top-1/2 left-1/2 z-[70] flex max-h-[min(92dvh,92vh,620px)] w-[min(100%-1.5rem,760px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
             >
               <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 pt-4 pb-3">
                 <div className="min-w-0">

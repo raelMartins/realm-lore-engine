@@ -211,7 +211,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", damping: 26, stiffness: 320 }}
-            className="glass-panel-strong fixed top-1/2 left-1/2 z-[90] flex h-[min(82vh,620px)] w-[min(100%-1.25rem,980px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
+            className="glass-panel-strong fixed top-1/2 left-1/2 z-[90] flex h-[min(82dvh,82vh,620px)] w-[min(100%-1.25rem,980px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
           >
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <div>

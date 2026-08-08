@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Cinzel, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -26,13 +26,21 @@ export const metadata: Metadata = {
     "An interactive spatial lore codex for world-building, TTRPG, and creative tech.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
       className={`${cormorant.variable} ${cinzel.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="flex min-h-dvh flex-col font-sans overscroll-none">
+        {children}
+      </body>
     </html>
   );
 }
