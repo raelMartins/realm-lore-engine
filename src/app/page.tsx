@@ -9,6 +9,7 @@ import { RealmOverview } from "@/components/RealmOverview";
 import { GuildChartControls } from "@/components/GuildChartControls";
 import { ExplorationProgress } from "@/components/ExplorationProgress";
 import { Confetti } from "@/components/hire/Confetti";
+import { AllianceCongrats } from "@/components/hire/AllianceCongrats";
 import { CalendarModal } from "@/components/CalendarModal";
 import { getSchedulingUrl } from "@/lib/scheduling";
 import { CompanyLoreConfig, LorePin, RealmSide } from "@/types/world";
@@ -41,6 +42,7 @@ import {
   revealSecret,
   isSecretPin,
 } from "@/lib/secrets";
+import type { RealmColorPhase } from "@/components/RealmHitLayer";
 import {
   Volume2,
   VolumeX,
@@ -76,7 +78,11 @@ export default function Home() {
     homeUnitedState(),
   );
   const [allianceForged, setAllianceForged] = useState(false);
+  const [congratsOpen, setCongratsOpen] = useState(false);
+  const [realmColorPhase, setRealmColorPhase] =
+    useState<RealmColorPhase>("idle");
   const [confettiOn, setConfettiOn] = useState(false);
+  const [confettiHeavy, setConfettiHeavy] = useState(false);
   const [cameraCommand, setCameraCommand] = useState<CameraCommand | null>(
     null,
   );
@@ -176,7 +182,7 @@ export default function Home() {
     setCameraCommand({ ...command, token: Date.now() } as CameraCommand);
   };
 
-  /** Locked motion: portal out → hidden → camera pans east → portal in. */
+  /** Celebrate → color align → portal out west → pan east → portal in. */
   const runPortalCinematic = async () => {
     if (!worldData || hireBusy) return;
     const motion: HireMotion = "portal";
@@ -196,6 +202,8 @@ export default function Home() {
       return;
     }
 
+    const celebrateMs = reduced ? 400 : 2600;
+    const alignMs = reduced ? 200 : 3000;
     const focusMs = reduced ? 200 : 750;
     const exitMs = reduced ? 80 : 1100;
     const holdGoneMs = reduced ? 120 : 380;
@@ -203,9 +211,28 @@ export default function Home() {
     const panWaitMs = reduced ? 360 : 1150;
     const enterMs = reduced ? 120 : 950;
 
-    // 1) Center on west pin
+    // 0) Confetti + parchment congrats; both isles lit as if hovered
     setUnitedState(homeUnitedState());
-    await sleep(50);
+    setConfettiHeavy(true);
+    setConfettiOn(true);
+    setCongratsOpen(true);
+    setRealmColorPhase("celebrate");
+    soundFx.playSelectSound();
+    await sleep(celebrateMs);
+
+    // 1) Adventurer isle slowly takes on guild colors
+    setRealmColorPhase("aligning");
+    await sleep(alignMs);
+
+    // 2) Banner clears; colors stay aligned
+    setCongratsOpen(false);
+    setRealmColorPhase("aligned");
+    setAllianceForged(true);
+    setConfettiOn(false);
+    setConfettiHeavy(false);
+    await sleep(reduced ? 120 : 450);
+
+    // 3) Center on west pin, then portal out
     issueCamera({
       type: "focus-pin",
       pinId: ADVENTURER_PIN_ID,
@@ -214,13 +241,11 @@ export default function Home() {
     });
     await sleep(focusMs);
 
-    // 2) Portal out
     setExitPinId(ADVENTURER_PIN_ID);
     setExitMotion(motion);
     soundFx.playSelectSound();
     await sleep(exitMs);
 
-    // 3) Gone completely — hide before clearing exit (no west flash)
     setHiddenPinId(ADVENTURER_PIN_ID);
     await sleep(30);
     setExitPinId(null);
@@ -238,7 +263,7 @@ export default function Home() {
     });
     await sleep(60);
 
-    // 5) Camera pans to east pin (still hidden) — pin will be viewport center
+    // 5) Camera pans to east pin (still hidden)
     issueCamera({
       type: "focus-pin",
       pinId: ADVENTURER_PIN_ID,
@@ -247,19 +272,16 @@ export default function Home() {
     });
     await sleep(panWaitMs);
 
-    // 6) Portal in at center of viewport
+    // 6) Portal in
     setEnterPinId(ADVENTURER_PIN_ID);
     setEnterMotion(motion);
     setHiddenPinId(null);
-    setConfettiOn(true);
-    setAllianceForged(true);
     soundFx.playSelectSound();
     void fetch("/api/world/unite", { method: "POST" });
 
     await sleep(enterMs);
     setEnterPinId(null);
     setEnterMotion(null);
-    setConfettiOn(false);
     setCameraCommand(null);
     setHireBusy(false);
 
@@ -284,7 +306,11 @@ export default function Home() {
     if (hireBusy) return;
     allianceEpoch.current += 1;
     setCalendarOpen(false);
+    setCongratsOpen(false);
+    setConfettiOn(false);
+    setConfettiHeavy(false);
     setAllianceForged(false);
+    setRealmColorPhase("idle");
     setExitPinId(null);
     setExitMotion(null);
     setEnterPinId(null);
@@ -480,7 +506,7 @@ export default function Home() {
         <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
           <span
             className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse ${
-              allianceForged ? "bg-amber-300" : "bg-teal-400"
+              allianceForged ? "bg-teal-300" : "bg-amber-300"
             }`}
           />
           <span className="font-semibold tracking-wide text-realm-silver">
@@ -547,6 +573,11 @@ export default function Home() {
         hiddenPinId={hiddenPinId}
         cameraCommand={cameraCommand}
         revealedSecretIds={revealedSecrets}
+        realmColorPhase={
+          allianceForged && realmColorPhase === "idle"
+            ? "aligned"
+            : realmColorPhase
+        }
       />
 
       <GuildChartControls
@@ -591,7 +622,16 @@ export default function Home() {
 
       <SecretToast message={secretToast} />
 
-      <Confetti active={confettiOn} />
+      <AllianceCongrats
+        open={congratsOpen}
+        companyName={displayData.companyName}
+      />
+
+      <Confetti
+        active={confettiOn}
+        durationMs={confettiHeavy ? 5200 : 3200}
+        intensity={confettiHeavy ? "heavy" : "normal"}
+      />
     </main>
   );
 }

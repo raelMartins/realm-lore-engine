@@ -10,7 +10,7 @@ import { CompanyLoreConfig, LorePin } from "@/types/world";
 import * as Icons from "lucide-react";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { soundFx } from "@/lib/audio";
-import { RealmHitLayer } from "@/components/RealmHitLayer";
+import { RealmHitLayer, type RealmColorPhase } from "@/components/RealmHitLayer";
 import {
   MAP_STAGE_SIZE_STYLE,
   SHOW_MAP_CALIBRATION,
@@ -65,6 +65,8 @@ interface MapCanvasProps {
   hiddenPinId?: string | null;
   /** One-shot camera instructions for hire cinematic / restore. */
   cameraCommand?: CameraCommand | null;
+  /** Alliance cinematic / lasting color alignment for islands. */
+  realmColorPhase?: RealmColorPhase;
   /** Revealed easter-egg pin ids — others render as faint hotspots. */
   revealedSecretIds?: Set<string>;
 }
@@ -227,44 +229,44 @@ function mapMarkerTone(opts: {
   if (opts.isSelected) {
     if (opts.isCompany) {
       return {
-        fill: "#f59e0b",
+        fill: "#14b8a6",
         stroke: "rgba(255,255,255,0.7)",
-        aperture: "rgba(255, 251, 235, 0.92)",
-        contentClass: "text-slate-900",
+        aperture: "rgba(204, 251, 241, 0.92)",
+        contentClass: "text-teal-950",
         iconClass: "h-5 w-5",
       };
     }
     return {
-      fill: "#14b8a6",
+      fill: "#f59e0b",
       stroke: "rgba(255,255,255,0.7)",
-      aperture: "rgba(204, 251, 241, 0.92)",
-      contentClass: "text-teal-950",
+      aperture: "rgba(255, 251, 235, 0.92)",
+      contentClass: "text-slate-900",
       iconClass: "h-5 w-5",
     };
   }
   if (opts.isCompany) {
     return {
-      fill: "rgba(58, 48, 28, 0.92)",
-      stroke: "rgba(253, 230, 138, 0.42)",
-      aperture: "rgba(12, 20, 24, 0.72)",
-      contentClass: "text-realm-mist",
+      fill: "rgba(14, 58, 64, 0.92)",
+      stroke: "rgba(94, 234, 212, 0.42)",
+      aperture: "rgba(6, 24, 28, 0.72)",
+      contentClass: "text-realm-teal-soft",
       iconClass: "h-5 w-5",
     };
   }
   if (opts.isSecret) {
     return {
-      fill: "rgba(15, 70, 72, 0.92)",
-      stroke: "rgba(94, 234, 212, 0.48)",
-      aperture: "rgba(6, 24, 28, 0.7)",
-      contentClass: "text-teal-200",
+      fill: "rgba(58, 48, 28, 0.92)",
+      stroke: "rgba(253, 230, 138, 0.48)",
+      aperture: "rgba(12, 20, 24, 0.7)",
+      contentClass: "text-amber-100",
       iconClass: "h-5 w-5",
     };
   }
   return {
-    fill: "rgba(14, 58, 64, 0.92)",
-    stroke: "rgba(255,255,255,0.3)",
-    aperture: "rgba(6, 24, 28, 0.7)",
-    contentClass: "text-realm-teal-soft",
+    fill: "rgba(58, 48, 28, 0.92)",
+    stroke: "rgba(253, 230, 138, 0.35)",
+    aperture: "rgba(12, 20, 24, 0.7)",
+    contentClass: "text-amber-100/90",
     iconClass: "h-5 w-5",
   };
 }
@@ -292,7 +294,7 @@ function MapMarkerPin({
 
   return (
     <div
-      className={`relative ${unitedRing ? "drop-shadow-[0_0_8px_rgba(94,234,212,0.5)]" : "drop-shadow-xl"} ${shellMotionClass ?? ""}`}
+      className={`relative ${unitedRing ? "drop-shadow-[0_0_8px_rgba(94,234,212,0.55)]" : "drop-shadow-xl"} ${shellMotionClass ?? ""}`}
       style={{ width: w, height: h }}
     >
       <svg
@@ -403,6 +405,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   hireBusy = false,
   hiddenPinId = null,
   cameraCommand = null,
+  realmColorPhase = "idle",
   revealedSecretIds,
 }) => {
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -501,12 +504,15 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     labels={data.realmLabels}
                     selectedRealm={selectedRealm}
                     onSelectRealm={onSelectRealm}
+                    colorPhase={realmColorPhase}
                   />
                 </div>
 
-                {united && (
+                {(united ||
+                  realmColorPhase === "aligning" ||
+                  realmColorPhase === "aligned") && (
                   <div
-                    className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_30%_45%,rgba(45,212,191,0.14),transparent_45%),radial-gradient(ellipse_at_75%_50%,rgba(245,158,11,0.12),transparent_48%)] mix-blend-screen"
+                    className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_30%_45%,rgba(45,212,191,0.14),transparent_45%),radial-gradient(ellipse_at_75%_50%,rgba(45,212,191,0.12),transparent_48%)] mix-blend-screen transition-opacity duration-1000"
                     aria-hidden
                   />
                 )}
@@ -641,13 +647,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           } ${
                             isSelected
                               ? isCompany
-                                ? "bg-amber-300/60 opacity-80 animate-pulse"
-                                : "bg-teal-400/70 opacity-80 animate-pulse"
+                                ? "bg-teal-400/70 opacity-80 animate-pulse"
+                                : "bg-amber-300/60 opacity-80 animate-pulse"
                               : isVeiledSecret
                                 ? "bg-teal-300/20 opacity-60 animate-pulse"
                                 : isCompany
-                                  ? "bg-amber-200/25 opacity-0 group-hover:opacity-100"
-                                  : "bg-teal-400/30 opacity-0 group-hover:opacity-100"
+                                  ? "bg-teal-400/30 opacity-0 group-hover:opacity-100"
+                                  : "bg-amber-200/25 opacity-0 group-hover:opacity-100"
                           }`}
                         />
 

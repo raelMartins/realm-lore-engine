@@ -7,6 +7,8 @@ import { prefersReducedMotion } from "@/lib/hire";
 interface ConfettiProps {
   active: boolean;
   durationMs?: number;
+  /** Particle count multiplier — celebrate uses a denser burst. */
+  intensity?: "normal" | "heavy";
 }
 
 type Particle = {
@@ -19,27 +21,29 @@ type Particle = {
   rotate: number;
 };
 
-const COLORS = ["#2dd4bf", "#5eead4", "#e8eef2", "#f59e0b", "#99f6e4", "#cbd5e1"];
+const COLORS = ["#2dd4bf", "#5eead4", "#e8eef2", "#f59e0b", "#99f6e4", "#fbbf24", "#cbd5e1", "#fde68a"];
 
 export const Confetti: React.FC<ConfettiProps> = ({
   active,
   durationMs = 3200,
+  intensity = "normal",
 }) => {
   const [show, setShow] = useState(false);
   const reduced = prefersReducedMotion();
+  const count = intensity === "heavy" ? 140 : 48;
 
   const particles = useMemo<Particle[]>(() => {
     if (reduced) return [];
-    return Array.from({ length: 48 }, (_, i) => ({
+    return Array.from({ length: count }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
-      delay: Math.random() * 0.6,
-      duration: 2.2 + Math.random() * 1.4,
+      delay: Math.random() * (intensity === "heavy" ? 1.1 : 0.6),
+      duration: 2.2 + Math.random() * 1.8,
       color: COLORS[i % COLORS.length],
-      size: 4 + Math.random() * 6,
+      size: 4 + Math.random() * (intensity === "heavy" ? 9 : 6),
       rotate: Math.random() * 360,
     }));
-  }, [reduced, active]);
+  }, [reduced, active, count, intensity]);
 
   useEffect(() => {
     if (!active) {
