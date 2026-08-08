@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
-import { CompanyLoreConfig, LorePin } from '@/types/world';
-import * as Icons from 'lucide-react';
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import React from "react";
+import {
+  TransformWrapper,
+  TransformComponent,
+  useControls,
+} from "react-zoom-pan-pinch";
+import { CompanyLoreConfig, LorePin } from "@/types/world";
+import * as Icons from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { soundFx } from "@/lib/audio";
 
 interface MapCanvasProps {
   data: CompanyLoreConfig;
@@ -17,43 +22,52 @@ const CanvasControls = () => {
   const { zoomIn, zoomOut, resetTransform } = useControls();
 
   return (
-    <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-2 bg-slate-900/90 backdrop-blur-md p-2 rounded-xl border border-amber-500/30 shadow-2xl">
+    <div className="glass-panel absolute bottom-6 right-6 z-20 flex flex-col gap-1.5 rounded-2xl p-1.5">
       <button
         type="button"
         onClick={() => zoomIn()}
-        className="p-2.5 text-amber-200 hover:text-white hover:bg-amber-500/20 rounded-lg transition-colors"
+        className="glass-btn rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
         title="Zoom In"
       >
-        <ZoomIn className="w-5 h-5" />
+        <ZoomIn className="h-5 w-5" />
       </button>
       <button
         type="button"
         onClick={() => zoomOut()}
-        className="p-2.5 text-amber-200 hover:text-white hover:bg-amber-500/20 rounded-lg transition-colors"
+        className="glass-btn rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
         title="Zoom Out"
       >
-        <ZoomOut className="w-5 h-5" />
+        <ZoomOut className="h-5 w-5" />
       </button>
       <button
         type="button"
         onClick={() => resetTransform()}
-        className="p-2.5 text-amber-200 hover:text-white hover:bg-amber-500/20 rounded-lg transition-colors"
+        className="glass-btn rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
         title="Reset Map View"
       >
-        <RotateCcw className="w-5 h-5" />
+        <RotateCcw className="h-5 w-5" />
       </button>
     </div>
   );
 };
 
-const DynamicIcon = ({ name, className }: { name: string; className?: string }) => {
-  const icons = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+const DynamicIcon = ({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) => {
+  const icons = Icons as unknown as Record<
+    string,
+    React.ComponentType<{ className?: string }>
+  >;
   const IconComponent = icons[name] || Icons.MapPin;
   return <IconComponent className={className} />;
 };
 
-/** Styled parchment + grid shown when no custom map PNG is available. */
-const ParchmentFallback = () => (
+/** Soft teal atlas grid shown when no custom map PNG is available. */
+const AtlasFallback = () => (
   <svg
     className="absolute inset-0 h-full w-full"
     viewBox="0 0 1400 900"
@@ -61,49 +75,80 @@ const ParchmentFallback = () => (
     aria-hidden
   >
     <defs>
-      <linearGradient id="parchment-base" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#292524" />
-        <stop offset="45%" stopColor="#1c1917" />
-        <stop offset="100%" stopColor="#0c0a09" />
+      <linearGradient id="atlas-base" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#0a1a22" />
+        <stop offset="45%" stopColor="#071319" />
+        <stop offset="100%" stopColor="#040a0e" />
       </linearGradient>
-      <radialGradient id="parchment-glow" cx="50%" cy="40%" r="65%">
-        <stop offset="0%" stopColor="#b45309" stopOpacity="0.22" />
-        <stop offset="55%" stopColor="#78350f" stopOpacity="0.08" />
-        <stop offset="100%" stopColor="#000000" stopOpacity="0.45" />
+      <radialGradient id="atlas-glow" cx="45%" cy="40%" r="65%">
+        <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.16" />
+        <stop offset="50%" stopColor="#0d9488" stopOpacity="0.06" />
+        <stop offset="100%" stopColor="#000000" stopOpacity="0.4" />
       </radialGradient>
-      <pattern id="parchment-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <radialGradient id="atlas-silver" cx="75%" cy="25%" r="40%">
+        <stop offset="0%" stopColor="#e8eef2" stopOpacity="0.07" />
+        <stop offset="100%" stopColor="#e8eef2" stopOpacity="0" />
+      </radialGradient>
+      <pattern
+        id="atlas-grid"
+        width="48"
+        height="48"
+        patternUnits="userSpaceOnUse"
+      >
         <path
           d="M 48 0 L 0 0 0 48"
           fill="none"
-          stroke="#f59e0b"
-          strokeWidth="0.6"
-          opacity="0.18"
+          stroke="#94a3b8"
+          strokeWidth="0.55"
+          opacity="0.16"
         />
       </pattern>
-      <pattern id="parchment-dots" width="24" height="24" patternUnits="userSpaceOnUse">
-        <circle cx="2" cy="2" r="1" fill="#fbbf24" opacity="0.12" />
+      <pattern
+        id="atlas-dots"
+        width="24"
+        height="24"
+        patternUnits="userSpaceOnUse"
+      >
+        <circle cx="2" cy="2" r="1" fill="#5eead4" opacity="0.14" />
       </pattern>
     </defs>
-    <rect width="1400" height="900" fill="url(#parchment-base)" />
-    <rect width="1400" height="900" fill="url(#parchment-glow)" />
-    <rect width="1400" height="900" fill="url(#parchment-grid)" />
-    <rect width="1400" height="900" fill="url(#parchment-dots)" />
+    <rect width="1400" height="900" fill="url(#atlas-base)" />
+    <rect width="1400" height="900" fill="url(#atlas-glow)" />
+    <rect width="1400" height="900" fill="url(#atlas-silver)" />
+    <rect width="1400" height="900" fill="url(#atlas-grid)" />
+    <rect width="1400" height="900" fill="url(#atlas-dots)" />
     <path
       d="M80 120 C220 80, 380 160, 520 110 S820 40, 980 130 S1220 220, 1320 160"
       fill="none"
-      stroke="#d97706"
-      strokeWidth="1.2"
-      opacity="0.2"
+      stroke="#5eead4"
+      strokeWidth="1.1"
+      opacity="0.18"
     />
     <path
       d="M100 720 C260 680, 420 760, 600 700 S920 620, 1100 710 S1280 780, 1340 740"
       fill="none"
-      stroke="#b45309"
+      stroke="#94a3b8"
       strokeWidth="1"
-      opacity="0.16"
+      opacity="0.14"
     />
-    <circle cx="320" cy="280" r="90" fill="none" stroke="#f59e0b" strokeWidth="0.8" opacity="0.12" />
-    <circle cx="980" cy="520" r="140" fill="none" stroke="#f59e0b" strokeWidth="0.8" opacity="0.1" />
+    <circle
+      cx="320"
+      cy="280"
+      r="90"
+      fill="none"
+      stroke="#2dd4bf"
+      strokeWidth="0.8"
+      opacity="0.14"
+    />
+    <circle
+      cx="980"
+      cy="520"
+      r="140"
+      fill="none"
+      stroke="#cbd5e1"
+      strokeWidth="0.8"
+      opacity="0.1"
+    />
   </svg>
 );
 
@@ -114,7 +159,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   mapImageUrl,
 }) => {
   return (
-    <div className="relative w-full h-screen bg-slate-950 overflow-hidden select-none">
+    <div className="relative h-screen w-full select-none overflow-hidden bg-realm-void">
       <TransformWrapper
         initialScale={1}
         minScale={0.8}
@@ -129,17 +174,17 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               wrapperClassName="!w-full !h-full"
               contentClassName="!w-full !h-full flex items-center justify-center"
             >
-              <div className="relative w-[1400px] h-[900px] rounded-2xl shadow-2xl overflow-hidden border border-amber-900/40 bg-slate-900">
+              <div className="relative h-[900px] w-[1400px] overflow-hidden rounded-3xl border border-white/10 bg-realm-deep shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
                 <div className="absolute inset-0">
-                  <ParchmentFallback />
+                  <AtlasFallback />
                   {mapImageUrl ? (
                     <div
                       className="absolute inset-0 bg-cover bg-center transition-all duration-500"
                       style={{ backgroundImage: `url(${mapImageUrl})` }}
                     />
                   ) : null}
-                  <div className="absolute inset-0 bg-amber-950/20 mix-blend-color pointer-events-none" />
-                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+                  <div className="pointer-events-none absolute inset-0 bg-teal-950/15 mix-blend-color" />
+                  <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[radial-gradient(#5eead4_1px,transparent_1px)] [background-size:22px_22px]" />
                 </div>
 
                 <div className="absolute inset-0">
@@ -151,36 +196,44 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         key={pin.id}
                         type="button"
                         onClick={() => onSelectPin(pin)}
+                        onMouseEnter={() => soundFx.playHoverSound()}
                         style={{
                           left: `${pin.coordinates.x}%`,
                           top: `${pin.coordinates.y}%`,
                         }}
-                        className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 focus:outline-none z-10 ${
-                          isSelected ? 'scale-125 z-30' : 'hover:scale-110'
+                        className={`group absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 focus:outline-none ${
+                          isSelected ? "z-30 scale-125" : "hover:scale-110"
                         }`}
                       >
                         <div
                           className={`absolute -inset-3 rounded-full blur-md transition-opacity duration-300 ${
                             isSelected
-                              ? 'bg-amber-400 opacity-80 animate-pulse'
-                              : 'bg-amber-500/40 opacity-0 group-hover:opacity-100'
+                              ? "bg-teal-400/70 opacity-80 animate-pulse"
+                              : "bg-teal-400/30 opacity-0 group-hover:opacity-100"
                           }`}
                         />
 
                         <div
-                          className={`relative flex items-center justify-center w-12 h-12 rounded-full border-2 shadow-xl transition-all duration-300 ${
+                          className={`relative flex h-12 w-12 items-center justify-center rounded-full border shadow-xl transition-all duration-300 ${
                             isSelected
-                              ? 'bg-amber-500 border-amber-200 text-slate-950 shadow-amber-500/50'
-                              : 'bg-slate-900/90 border-amber-500/60 text-amber-300 group-hover:border-amber-400'
+                              ? "border-white/60 bg-gradient-to-br from-teal-300 to-teal-600 text-teal-950 shadow-teal-400/40"
+                              : "glass-btn border-white/25 text-realm-teal-soft group-hover:border-teal-300/50"
                           }`}
                         >
-                          <DynamicIcon name={pin.iconName} className="w-6 h-6" />
+                          <DynamicIcon
+                            name={pin.iconName}
+                            className="h-6 w-6"
+                          />
                         </div>
 
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-40">
-                          <div className="bg-slate-900/95 border border-amber-500/40 px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap text-center">
-                            <p className="text-xs font-bold text-amber-200">{pin.title}</p>
-                            <p className="text-[10px] text-slate-400">{pin.subtitle}</p>
+                        <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100">
+                          <div className="glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl">
+                            <p className="text-xs font-semibold text-realm-silver">
+                              {pin.title}
+                            </p>
+                            <p className="text-[10px] text-realm-silver-muted">
+                              {pin.subtitle}
+                            </p>
                           </div>
                         </div>
                       </button>

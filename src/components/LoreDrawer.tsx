@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LorePin } from "@/types/world";
-import { X, ExternalLink, Mail, Sparkles, CheckCircle2 } from "lucide-react";
+import { X, ExternalLink, Mail, Sparkles } from "lucide-react";
 import * as Icons from "lucide-react";
 
 interface LoreDrawerProps {
@@ -18,8 +18,11 @@ const DynamicIcon = ({
   name: string;
   className?: string;
 }) => {
-  // @ts-ignore dynamic lookup
-  const IconComponent = Icons[name] || Icons.MapPin;
+  const icons = Icons as unknown as Record<
+    string,
+    React.ComponentType<{ className?: string }>
+  >;
+  const IconComponent = icons[name] || Icons.MapPin;
   return <IconComponent className={className} />;
 };
 
@@ -28,72 +31,80 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
     <AnimatePresence>
       {pin && (
         <>
-          {/* Backdrop overlay for mobile / focus */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 md:bg-transparent md:backdrop-blur-none pointer-events-auto"
+            className="fixed inset-0 z-40 bg-[#040a0e]/55 backdrop-blur-sm md:bg-[#040a0e]/25"
           />
 
-          {/* Slide-over Drawer */}
           <motion.aside
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md bg-slate-900/95 border-l border-amber-500/30 text-slate-100 p-6 z-50 overflow-y-auto shadow-2xl backdrop-blur-md flex flex-col justify-between"
+            initial={{ x: "100%", opacity: 0.6 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "100%", opacity: 0.6 }}
+            transition={{ type: "spring", damping: 28, stiffness: 260 }}
+            className="glass-panel-strong fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col justify-between overflow-y-auto rounded-l-[1.75rem] border-l border-white/15 p-7 text-realm-silver"
           >
             <div>
-              {/* Header Bar */}
-              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400">
-                    <DynamicIcon name={pin.iconName} className="w-5 h-5" />
+              <div className="mb-7 flex items-center justify-between border-b border-white/10 pb-5">
+                <div className="flex items-center gap-3">
+                  <span className="glass-btn flex h-10 w-10 items-center justify-center rounded-2xl text-realm-teal">
+                    <DynamicIcon name={pin.iconName} className="h-5 w-5" />
                   </span>
-                  <span className="text-xs uppercase tracking-wider text-amber-400 font-bold">
+                  <span className="pill text-[10px] uppercase tracking-[0.14em] text-realm-teal-soft">
                     {pin.content.badge || pin.category}
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                  className="glass-btn rounded-full p-2.5 text-realm-silver-muted hover:text-realm-silver"
+                  aria-label="Close lore drawer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* Title & Subtitle */}
-              <h2 className="text-2xl font-bold text-amber-100">{pin.title}</h2>
-              <p className="text-sm text-slate-400 mb-6">{pin.subtitle}</p>
+              <h2 className="font-display text-3xl font-semibold leading-snug tracking-wide text-realm-silver">
+                {pin.title}
+              </h2>
+              <p className="mt-2 text-sm font-medium tracking-wide text-realm-silver-muted">
+                {pin.subtitle}
+              </p>
 
-              {/* Description Body */}
-              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-sm leading-relaxed text-slate-300 mb-6">
+              <div className="glass-panel mt-6 rounded-2xl p-4 text-sm leading-relaxed text-realm-mist">
                 {pin.content.description}
               </div>
 
-              {/* Attribute Stats Bar Component */}
               {pin.content.stats && pin.content.stats.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xs uppercase tracking-wider text-amber-400 font-bold mb-3 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" /> Attributes & Proficiency
+                <div className="mt-7">
+                  <h3 className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-realm-teal-soft">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Attributes & Proficiency
                   </h3>
-                  <div className="space-y-3">
-                    {pin.content.stats.map((stat) => (
+                  <div className="space-y-4">
+                    {pin.content.stats.map((stat, index) => (
                       <div key={stat.label}>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-300">{stat.label}</span>
-                          <span className="text-amber-400 font-mono font-bold">
-                            {stat.value}%
+                        <div className="mb-1.5 flex items-baseline justify-between">
+                          <span className="text-sm text-realm-mist">
+                            {stat.label}
+                          </span>
+                          <span className="font-mono text-xs font-semibold text-realm-teal-soft">
+                            {stat.value}
+                            <span className="text-realm-silver-muted">%</span>
                           </span>
                         </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div className="stat-track">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${stat.value}%` }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            className="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full"
+                            transition={{
+                              duration: 0.9,
+                              delay: index * 0.06,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="stat-fill"
                           />
                         </div>
                       </div>
@@ -102,18 +113,14 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
                 </div>
               )}
 
-              {/* Tags */}
               {pin.content.tags && pin.content.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">
+                <div className="mt-7">
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-realm-silver-muted">
                     Key Tech & Concepts
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {pin.content.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-xs bg-slate-800 text-amber-200/90 px-2.5 py-1 rounded-md border border-amber-500/20"
-                      >
+                      <span key={tag} className="pill">
                         {tag}
                       </span>
                     ))}
@@ -122,16 +129,15 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
               )}
             </div>
 
-            {/* Footer Call to Action & External Links */}
-            <div className="pt-6 border-t border-amber-500/20 space-y-3">
+            <div className="mt-8 space-y-3 border-t border-white/10 pt-6">
               {pin.content.externalLink && (
                 <a
                   href={pin.content.externalLink.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200 border border-amber-500/30 font-medium text-sm transition-all"
+                  className="glass-btn flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-realm-silver"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="h-4 w-4 text-realm-teal" />
                   {pin.content.externalLink.label}
                 </a>
               )}
@@ -139,9 +145,9 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
               {pin.content.callToAction && (
                 <a
                   href={pin.content.callToAction.target}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all"
+                  className="btn-primary flex w-full items-center justify-center gap-2 rounded-full px-4 py-3.5 text-sm font-semibold"
                 >
-                  <Mail className="w-4 h-4" />
+                  <Mail className="h-4 w-4" />
                   {pin.content.callToAction.label}
                 </a>
               )}

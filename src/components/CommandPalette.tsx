@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { LorePin } from "@/types/world";
-import { Search, MapPin, X } from "lucide-react";
+import { Search, MapPin, X, CornerDownLeft } from "lucide-react";
 
 interface CommandPaletteProps {
   pins: LorePin[];
@@ -16,7 +16,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  // Toggle modal on Cmd+K or Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -44,12 +43,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   if (!isOpen) {
     return (
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className="absolute top-6 left-6 z-20 flex items-center gap-3 bg-slate-900/90 border border-amber-500/30 hover:border-amber-400 px-4 py-2.5 rounded-xl text-slate-400 text-xs shadow-2xl backdrop-blur-md transition-all group"
+        className="glass-panel absolute top-6 left-6 z-20 flex items-center gap-3 rounded-full px-4 py-2.5 text-xs text-realm-silver-muted transition-all hover:border-realm-teal/40 hover:text-realm-silver group"
       >
-        <Search className="w-4 h-4 text-amber-400" />
-        <span>Search map lore & nodes...</span>
-        <kbd className="bg-slate-800 border border-slate-700 text-amber-300 px-2 py-0.5 rounded text-[10px] font-mono">
+        <Search className="h-4 w-4 text-realm-teal" />
+        <span className="font-medium">Search map lore & nodes...</span>
+        <kbd className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 font-mono text-[10px] text-realm-mist">
           ⌘K
         </kbd>
       </button>
@@ -57,53 +57,57 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-start justify-center pt-20 p-4">
-      <div className="bg-slate-900 border border-amber-500/40 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-        {/* Search Header */}
-        <div className="flex items-center px-4 py-3 border-b border-amber-500/20">
-          <Search className="w-5 h-5 text-amber-400 mr-3" />
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-[#040a0e]/70 p-4 pt-20 backdrop-blur-md">
+      <div className="glass-panel-strong w-full max-w-lg overflow-hidden rounded-3xl border-white/15 shadow-2xl">
+        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3.5">
+          <Search className="h-5 w-5 shrink-0 text-realm-teal" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type a topic, skill, or node title..."
-            className="w-full bg-transparent text-amber-100 placeholder-slate-500 text-sm focus:outline-none"
+            className="w-full bg-transparent text-sm text-realm-silver placeholder:text-realm-silver-muted/70 focus:outline-none"
             autoFocus
           />
           <button
+            type="button"
             onClick={() => setIsOpen(false)}
-            className="text-slate-500 hover:text-white"
+            className="glass-btn rounded-full p-2 text-realm-silver-muted hover:text-realm-silver"
+            aria-label="Close search"
           >
-            <X className="w-5 h-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Search Results List */}
         <div className="max-h-80 overflow-y-auto p-2">
           {filteredPins.length === 0 ? (
-            <p className="text-center text-xs text-slate-500 py-6">
+            <p className="py-8 text-center text-xs text-realm-silver-muted">
               No matching lore nodes found.
             </p>
           ) : (
             filteredPins.map((pin) => (
               <button
                 key={pin.id}
+                type="button"
                 onClick={() => {
                   onSelectPin(pin);
                   setIsOpen(false);
                   setQuery("");
                 }}
-                className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-amber-500/10 hover:border hover:border-amber-500/30 transition-all text-left group"
+                className="group flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition-all hover:border-realm-teal/25 hover:bg-white/5"
               >
-                <div className="p-2 bg-slate-800 rounded-lg text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
-                  <MapPin className="w-4 h-4" />
+                <div className="glass-btn rounded-2xl p-2.5 text-realm-teal transition-colors group-hover:border-realm-teal/40 group-hover:text-realm-teal-soft">
+                  <MapPin className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-amber-200">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-realm-silver">
                     {pin.title}
                   </p>
-                  <p className="text-xs text-slate-400">{pin.subtitle}</p>
+                  <p className="mt-0.5 text-xs text-realm-silver-muted">
+                    {pin.subtitle}
+                  </p>
                 </div>
+                <CornerDownLeft className="mt-1 h-3.5 w-3.5 shrink-0 text-realm-silver-muted opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
             ))
           )}

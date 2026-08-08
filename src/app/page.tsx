@@ -25,38 +25,37 @@ export default function Home() {
   };
 
   return (
-    <main className="w-full h-screen overflow-hidden bg-slate-950 relative">
-      {/* Top Left: Search Command Palette */}
+    <main className="realm-atmosphere relative h-screen w-full overflow-hidden">
       <CommandPalette pins={worldData.pins} onSelectPin={handleSelectPin} />
 
-      {/* Top Right: Sound Toggle Button & Company Tagline Badge */}
       <div className="absolute top-6 right-6 z-20 flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-2 bg-slate-900/90 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-200 text-xs shadow-2xl backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-bold">{worldData.companyName}</span>
+        <div className="glass-panel hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
+          <span className="h-2 w-2 rounded-full bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse" />
+          <span className="font-semibold tracking-wide text-realm-silver">
+            {worldData.companyName}
+          </span>
         </div>
 
         <button
+          type="button"
           onClick={handleToggleMute}
-          className="p-2.5 bg-slate-900/90 border border-amber-500/30 hover:border-amber-400 text-amber-300 rounded-xl shadow-2xl backdrop-blur-md transition-all"
+          className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
           title={isMuted ? "Unmute Audio" : "Mute Audio"}
         >
           {isMuted ? (
-            <VolumeX className="w-4 h-4" />
+            <VolumeX className="h-4 w-4" />
           ) : (
-            <Volume2 className="w-4 h-4" />
+            <Volume2 className="h-4 w-4" />
           )}
         </button>
       </div>
 
-      {/* Interactive Canvas */}
       <MapCanvas
         data={worldData}
         selectedPinId={selectedPin?.id || null}
         onSelectPin={handleSelectPin}
       />
 
-      {/* Slide-over Drawer */}
       <LoreDrawer pin={selectedPin} onClose={() => setSelectedPin(null)} />
     </main>
   );
