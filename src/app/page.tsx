@@ -28,8 +28,8 @@ export default function Home() {
     <main className="realm-atmosphere relative h-screen w-full overflow-hidden">
       <CommandPalette pins={worldData.pins} onSelectPin={handleSelectPin} />
 
-      <div className="absolute top-6 right-6 z-20 flex items-center gap-3">
-        <div className="glass-panel hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
+      <div className="pointer-events-none absolute top-6 right-6 z-30 flex items-center gap-3">
+        <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
           <span className="h-2 w-2 rounded-full bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse" />
           <span className="font-semibold tracking-wide text-realm-silver">
             {worldData.companyName}
@@ -39,7 +39,7 @@ export default function Home() {
         <button
           type="button"
           onClick={handleToggleMute}
-          className="glass-panel glass-btn rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
+          className="glass-panel glass-btn pointer-events-auto rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
           title={isMuted ? "Unmute Audio" : "Mute Audio"}
         >
           {isMuted ? (

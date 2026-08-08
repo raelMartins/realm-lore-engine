@@ -22,7 +22,7 @@ const CanvasControls = () => {
   const { zoomIn, zoomOut, resetTransform } = useControls();
 
   return (
-    <div className="glass-panel absolute bottom-6 right-6 z-20 flex flex-col gap-1.5 rounded-2xl p-1.5">
+    <div className="glass-panel pointer-events-auto absolute bottom-6 right-6 z-30 flex flex-col gap-1.5 rounded-2xl p-1.5">
       <button
         type="button"
         onClick={() => zoomIn()}
@@ -159,7 +159,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   mapImageUrl,
 }) => {
   return (
-    <div className="relative h-screen w-full select-none overflow-hidden bg-realm-void">
+    <div className="absolute inset-0 z-0 select-none overflow-hidden bg-realm-void">
       <TransformWrapper
         initialScale={1}
         minScale={0.8}
@@ -171,10 +171,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           <>
             <CanvasControls />
             <TransformComponent
-              wrapperClassName="!w-full !h-full"
-              contentClassName="!w-full !h-full flex items-center justify-center"
+              wrapperClassName="!h-full !w-full"
+              contentClassName="!h-full !w-full"
             >
-              <div className="relative h-[900px] w-[1400px] overflow-hidden rounded-3xl border border-white/10 bg-realm-deep shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+              <div className="relative h-screen w-screen overflow-hidden bg-realm-deep">
                 <div className="absolute inset-0">
                   <AtlasFallback />
                   {mapImageUrl ? (
