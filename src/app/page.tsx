@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getCompanyData } from "@/lib/getCompanyData";
-import { MapCanvas, type CameraCommand } from "@/components/MapCanvas";
+import { MapCanvas, type CameraCommand, type CameraCommandInput } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
@@ -165,7 +165,7 @@ export default function Home() {
   const sleep = (ms: number) =>
     new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
-  const issueCamera = (command: Omit<CameraCommand, "token">) => {
+  const issueCamera = (command: CameraCommandInput) => {
     setCameraCommand({ ...command, token: Date.now() } as CameraCommand);
   };
 

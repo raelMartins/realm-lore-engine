@@ -30,6 +30,16 @@ export type CameraCommand =
     }
   | { type: "reset"; token: number; durationMs?: number };
 
+/** Camera instruction before a unique token is attached. */
+export type CameraCommandInput =
+  | {
+      type: "focus-pin";
+      pinId: string;
+      scale?: number;
+      durationMs?: number;
+    }
+  | { type: "reset"; durationMs?: number };
+
 interface MapCanvasProps {
   data: CompanyLoreConfig;
   selectedPinId: string | null;
