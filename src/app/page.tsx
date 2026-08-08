@@ -54,6 +54,7 @@ export default function Home() {
         data={worldData}
         selectedPinId={selectedPin?.id || null}
         onSelectPin={handleSelectPin}
+        mapImageUrl="/maps/realm-map.png"
       />
 
       <LoreDrawer pin={selectedPin} onClose={() => setSelectedPin(null)} />

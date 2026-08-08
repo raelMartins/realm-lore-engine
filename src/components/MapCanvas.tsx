@@ -10,6 +10,7 @@ import { CompanyLoreConfig, LorePin } from "@/types/world";
 import * as Icons from "lucide-react";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { soundFx } from "@/lib/audio";
+import { QuestTrail } from "@/components/QuestTrail";
 
 interface MapCanvasProps {
   data: CompanyLoreConfig;
@@ -174,20 +175,45 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               wrapperClassName="!h-full !w-full"
               contentClassName="!h-full !w-full"
             >
-              <div className="relative h-screen w-screen overflow-hidden bg-realm-deep">
+              <div className="relative h-screen w-screen overflow-hidden bg-[#1a1410] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]">
+                {/* Map art + parchment / tactical grade */}
                 <div className="absolute inset-0">
-                  <AtlasFallback />
                   {mapImageUrl ? (
-                    <div
-                      className="absolute inset-0 bg-cover bg-center transition-all duration-500"
-                      style={{ backgroundImage: `url(${mapImageUrl})` }}
-                    />
-                  ) : null}
-                  <div className="pointer-events-none absolute inset-0 bg-teal-950/15 mix-blend-color" />
-                  <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[radial-gradient(#5eead4_1px,transparent_1px)] [background-size:22px_22px]" />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={mapImageUrl}
+                        alt="Realm map"
+                        draggable={false}
+                        className="absolute inset-0 h-full w-full object-cover object-center select-none"
+                        style={{
+                          filter:
+                            "sepia(0.42) contrast(1.12) saturate(0.78) brightness(0.92) hue-rotate(-8deg)",
+                        }}
+                      />
+                      {/* Warm parchment wash */}
+                      <div className="pointer-events-none absolute inset-0 bg-[#c4a574]/18 mix-blend-multiply" />
+                      <div className="pointer-events-none absolute inset-0 bg-[#2a1f14]/25 mix-blend-overlay" />
+                      {/* Edge vignette */}
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(10,6,4,0.55)_100%)]" />
+                    </>
+                  ) : (
+                    <>
+                      <AtlasFallback />
+                      <div className="pointer-events-none absolute inset-0 bg-[#c4a574]/12 mix-blend-multiply" />
+                      <div className="pointer-events-none absolute inset-0 bg-teal-950/15 mix-blend-color" />
+                    </>
+                  )}
                 </div>
 
-                <div className="absolute inset-0">
+                {/* Inset vignette ring (requested) */}
+                <div className="pointer-events-none absolute inset-0 z-[3] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)]" />
+
+                {/* Quest routes — behind pins, scales with pan/zoom */}
+                <QuestTrail pins={data.pins} />
+
+                {/* Lore pins */}
+                <div className="absolute inset-0 z-[2]">
                   {data.pins.map((pin) => {
                     const isSelected = selectedPinId === pin.id;
 
