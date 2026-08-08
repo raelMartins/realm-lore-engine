@@ -65,7 +65,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="glass-panel absolute top-6 left-6 z-30 flex items-center gap-3 rounded-full px-4 py-2.5 text-xs text-realm-silver-muted transition-all hover:border-realm-teal/40 hover:text-realm-silver group"
+        className="glass-panel flex items-center gap-3 rounded-full px-4 py-2.5 text-xs text-realm-silver-muted transition-all hover:border-realm-teal/40 hover:text-realm-silver group"
       >
         <Search className="h-4 w-4 text-realm-teal" />
         <span className="font-medium">Search map lore & nodes...</span>

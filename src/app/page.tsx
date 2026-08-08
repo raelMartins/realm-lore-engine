@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getCompanyData } from "@/lib/getCompanyData";
 import { MapCanvas } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
 import { GuildChartControls } from "@/components/GuildChartControls";
+import { ExplorationProgress } from "@/components/ExplorationProgress";
 import { CompanyLoreConfig, LorePin, RealmSide } from "@/types/world";
 import { musicFx, soundFx } from "@/lib/audio";
 import {
   PLACEMENT_ERROR_MESSAGE,
   validateGuildPlacement,
 } from "@/lib/world/placement";
+import {
+  countExploredDiscoverable,
+  loadExploredPinIds,
+  markPinExplored,
+} from "@/lib/exploration";
 import { Volume2, VolumeX, Music2, Music } from "lucide-react";
 
 type WorldApiResponse = CompanyLoreConfig & {
@@ -21,6 +27,7 @@ type WorldApiResponse = CompanyLoreConfig & {
 
 export default function Home() {
   const [worldData, setWorldData] = useState<CompanyLoreConfig | null>(null);
+  const [worldId, setWorldId] = useState("default");
   const [selectedPin, setSelectedPin] = useState<LorePin | null>(null);
   const [selectedRealm, setSelectedRealm] = useState<RealmSide | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -33,14 +40,16 @@ export default function Home() {
   } | null>(null);
   const [placeHint, setPlaceHint] = useState<string | null>(null);
   const [spawnPinId, setSpawnPinId] = useState<string | null>(null);
+  const [exploredIds, setExploredIds] = useState<Set<string>>(() => new Set());
 
   const refreshWorld = async () => {
     const res = await fetch("/api/world");
     if (!res.ok) throw new Error(`World API ${res.status}`);
     const json = (await res.json()) as WorldApiResponse;
-    const { _meta: _ignored, ...data } = json;
+    const { _meta, ...data } = json;
+    if (_meta?.worldId) setWorldId(_meta.worldId);
     setWorldData(data);
-    return data;
+    return { data, worldId: _meta?.worldId ?? "default" };
   };
 
   useEffect(() => {
@@ -52,12 +61,17 @@ export default function Home() {
 
     async function load() {
       try {
-        const data = await refreshWorld();
+        const { data, worldId: id } = await refreshWorld();
         if (cancelled) return;
         setWorldData(data);
+        setWorldId(id);
+        setExploredIds(loadExploredPinIds(id));
       } catch (error) {
         console.error("Failed to load /api/world, using local fallback:", error);
-        if (!cancelled) setWorldData(getCompanyData());
+        if (!cancelled) {
+          setWorldData(getCompanyData());
+          setExploredIds(loadExploredPinIds("default"));
+        }
       }
 
       try {
@@ -77,11 +91,17 @@ export default function Home() {
     };
   }, []);
 
+  const exploration = useMemo(() => {
+    if (!worldData) return { explored: 0, total: 0 };
+    return countExploredDiscoverable(worldData.pins, exploredIds);
+  }, [worldData, exploredIds]);
+
   const handleSelectPin = (pin: LorePin) => {
     if (placing) return;
     soundFx.playSelectSound();
     setSelectedRealm(null);
     setSelectedPin(pin);
+    setExploredIds((prev) => markPinExplored(worldId, pin, prev));
   };
 
   const handleSelectRealm = (realm: RealmSide) => {
@@ -144,11 +164,19 @@ export default function Home() {
 
   return (
     <main className="realm-atmosphere relative h-screen w-full overflow-hidden">
-      <CommandPalette
-        pins={worldData.pins}
-        onSelectPin={handleSelectPin}
-        realmLabels={worldData.realmLabels}
-      />
+      <div className="pointer-events-none absolute top-6 left-6 z-30 flex flex-col items-start gap-2">
+        <div className="pointer-events-auto">
+          <CommandPalette
+            pins={worldData.pins}
+            onSelectPin={handleSelectPin}
+            realmLabels={worldData.realmLabels}
+          />
+        </div>
+        <ExplorationProgress
+          explored={exploration.explored}
+          total={exploration.total}
+        />
+      </div>
 
       <div className="pointer-events-none absolute top-6 right-6 z-30 flex items-start gap-3">
         <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
