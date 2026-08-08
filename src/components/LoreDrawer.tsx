@@ -308,6 +308,21 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
           </a>
         )}
 
+        {pin.content.callToAction?.actionType === "hire" &&
+          !pin.content.externalLink && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenCalendar?.();
+              }}
+              className="parchment-btn-secondary flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
+            >
+              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Schedule meeting</span>
+            </button>
+          )}
+
         {pin.content.callToAction &&
           (pin.content.callToAction.actionType === "hire" ? (
             <button

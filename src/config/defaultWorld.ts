@@ -48,10 +48,6 @@ export const defaultWorldData: CompanyLoreConfig = {
           { label: "AI-Native Speed", value: 99 },
         ],
         tags: ["React", "TypeScript", "Next.js", "Vue.js", "Cursor AI"],
-        externalLink: {
-          label: "View Full Portfolio",
-          url: "https://aboutmartins.vercel.app/",
-        },
         callToAction: {
           label: "Offer Alliance",
           actionType: "hire",
