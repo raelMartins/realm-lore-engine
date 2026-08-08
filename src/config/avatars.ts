@@ -30,6 +30,46 @@ export const AVATAR_CATALOG: AvatarOption[] = [
     label: 'Viking',
     src: '/avatars/viking.jpg',
   },
+  {
+    id: 'cartoon',
+    label: 'Cartoon',
+    src: '/avatars/cartoon.jpg',
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    src: '/avatars/ember.jpg',
+  },
+  {
+    id: 'festival',
+    label: 'Festival',
+    src: '/avatars/festival.jpg',
+  },
+  {
+    id: 'ninja',
+    label: 'Ninja',
+    src: '/avatars/ninja.jpg',
+  },
+  {
+    id: 'rama',
+    label: 'Rama',
+    src: '/avatars/rama.jpg',
+  },
+  {
+    id: 'sun-god',
+    label: 'Sun God',
+    src: '/avatars/sun-god.jpg',
+  },
+  {
+    id: 'tide',
+    label: 'Tide',
+    src: '/avatars/tide.jpg',
+  },
+  {
+    id: 'water',
+    label: 'Water',
+    src: '/avatars/water.jpg',
+  },
 ];
 
 export function getAvatarById(id: string | undefined): AvatarOption | undefined {

@@ -240,7 +240,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
   const [avatarsExpanded, setAvatarsExpanded] = useState(false);
 
   const guildAvatars = getSelectableAvatars("company");
-  const AVATAR_PREVIEW_COUNT = 6;
+  const AVATAR_PREVIEW_COUNT = 5;
   const visibleAvatars = avatarsExpanded
     ? guildAvatars
     : guildAvatars.slice(0, AVATAR_PREVIEW_COUNT);
@@ -584,13 +584,13 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                   {category === "character" && (
                     <div className="sm:col-span-2">
                       <p className="text-xs text-realm-silver-muted">Avatar</p>
-                      <div className="mt-1 flex flex-wrap gap-2">
+                      <div className="mt-1 grid w-full grid-cols-5 gap-2">
                         {visibleAvatars.map((avatar) => (
                           <button
                             key={avatar.id}
                             type="button"
                             onClick={() => setAvatarId(avatar.id)}
-                            className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition sm:h-[4.5rem] sm:w-[4.5rem] ${
+                            className={`aspect-square w-full overflow-hidden rounded-xl border-2 transition ${
                               avatarId === avatar.id
                                 ? "border-teal-300 shadow-[0_0_0_1px_rgba(94,234,212,0.35)]"
                                 : "border-white/15 opacity-75 hover:border-white/30 hover:opacity-100"
