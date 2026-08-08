@@ -12,9 +12,11 @@ import {
   Trophy,
   Scroll,
   CalendarDays,
+  RotateCcw,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { getAvatarById } from "@/config/avatars";
+import { prefersReducedMotion } from "@/lib/hire";
 
 interface LoreDrawerProps {
   pin: LorePin | null;
@@ -27,9 +29,11 @@ type CardPlacement =
   | { mode: "anchored"; left: number; top: number }
   | { mode: "fallback" };
 
-const CARD_WIDTH = 300;
+const CARD_WIDTH = 340;
 const GAP = 14;
 const PAD = 14;
+/** Used for first placement before the card has laid out. */
+const ESTIMATED_CARD_HEIGHT = 460;
 
 const TYPE_META: Record<
   PinType,
@@ -93,6 +97,22 @@ function computePlacement(
   return { mode: "anchored", left, top };
 }
 
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      "a, button, input, textarea, select, [role='button'], [data-no-flip]",
+    ),
+  );
+}
+
+function tagsHeading(category: PinType): string {
+  if (category === "project") return "Stack & Concepts";
+  if (category === "character") return "Traits & Focus";
+  if (category === "achievement") return "Marks of Merit";
+  return "Tags";
+}
+
 export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   pin,
   onClose,
@@ -100,13 +120,22 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   onOpenCalendar,
 }) => {
   const cardRef = useRef<HTMLElement>(null);
+  const flippedRef = useRef(false);
   const [placement, setPlacement] = useState<CardPlacement | null>(null);
+  const [placementPinId, setPlacementPinId] = useState<string | null>(null);
+  const [positioned, setPositioned] = useState(false);
+  const [flipped, setFlipped] = useState(false);
+
+  flippedRef.current = flipped;
 
   useEffect(() => {
     if (!pin) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (flippedRef.current) setFlipped(false);
+        else onClose();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -116,27 +145,44 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   useLayoutEffect(() => {
     if (!pin) {
       setPlacement(null);
+      setPlacementPinId(null);
+      setPositioned(false);
+      setFlipped(false);
       return;
     }
 
-    let raf = 0;
+    const pinId = pin.id;
     let cancelled = false;
+    let raf = 0;
+    let revealed = false;
     let lastLeft = -999;
     let lastTop = -999;
     let lastMode: CardPlacement["mode"] | null = null;
 
-    const track = () => {
-      if (cancelled) return;
+    setFlipped(false);
+    setPositioned(false);
 
-      const height = cardRef.current?.offsetHeight ?? 420;
-      const next = computePlacement(pin.id, height);
+    // Sync estimate before paint so we never flash the centered fallback.
+    const initial = computePlacement(pinId, ESTIMATED_CARD_HEIGHT);
+    setPlacement(initial);
+    setPlacementPinId(pinId);
+    if (initial.mode === "anchored") {
+      lastMode = "anchored";
+      lastLeft = initial.left;
+      lastTop = initial.top;
+    } else {
+      lastMode = "fallback";
+    }
 
+    const applyPlacement = (next: CardPlacement) => {
       if (next.mode === "fallback") {
         if (lastMode !== "fallback") {
           lastMode = "fallback";
           setPlacement(next);
         }
-      } else if (
+        return;
+      }
+      if (
         lastMode !== "anchored" ||
         Math.abs(next.left - lastLeft) > 0.5 ||
         Math.abs(next.top - lastTop) > 0.5
@@ -145,6 +191,29 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
         lastLeft = next.left;
         lastTop = next.top;
         setPlacement(next);
+      }
+    };
+
+    const track = () => {
+      if (cancelled) return;
+
+      const measured = cardRef.current?.offsetHeight ?? 0;
+
+      if (!flippedRef.current) {
+        applyPlacement(
+          computePlacement(pinId, measured || ESTIMATED_CARD_HEIGHT),
+        );
+      }
+
+      // Reveal only after we have a real layout height (or fallback with no pin el).
+      if (!revealed) {
+        if (measured > 0 || lastMode === "fallback") {
+          if (measured > 0 && !flippedRef.current) {
+            applyPlacement(computePlacement(pinId, measured));
+          }
+          revealed = true;
+          setPositioned(true);
+        }
       }
 
       raf = requestAnimationFrame(track);
@@ -155,16 +224,87 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
       cancelled = true;
       cancelAnimationFrame(raf);
     };
-  }, [pin]);
+  }, [pin?.id]);
+
+  const placementReady =
+    Boolean(pin) && placement !== null && placementPinId === pin?.id;
 
   const cardPositionClass =
     placement?.mode === "anchored"
-      ? "parchment-card fixed z-50 flex max-h-[min(68vh,480px)] flex-col overflow-hidden rounded-[1.25rem]"
-      : "parchment-card fixed top-1/2 left-1/2 z-50 flex max-h-[min(68vh,480px)] w-[min(100%-2rem,300px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.25rem]";
+      ? "fixed z-50 max-h-[min(72vh,520px)]"
+      : "fixed top-1/2 left-1/2 z-50 w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 max-h-[min(72vh,520px)]";
 
   const avatar = pin ? getAvatarById(pin.avatarId) : undefined;
   const typeMeta = pin ? TYPE_META[pin.category] : null;
   const TypeIcon = typeMeta?.Icon ?? Sparkles;
+  const hasBackDetail = Boolean(
+    pin &&
+      ((pin.content.stats && pin.content.stats.length > 0) ||
+        (pin.content.tags && pin.content.tags.length > 0) ||
+        pin.category === "achievement" ||
+        pin.content.markdownBody),
+  );
+
+  const toggleFlip = () => {
+    if (!hasBackDetail) return;
+    setFlipped((v) => !v);
+  };
+
+  const actionFooter =
+    pin && (pin.content.externalLink || pin.content.callToAction) ? (
+      <div
+        className="relative z-10 flex gap-2 border-t parchment-rule px-4 pb-5 pt-3"
+        data-no-flip
+        onClick={(e) => e.stopPropagation()}
+      >
+        {pin.content.externalLink && (
+          <a
+            href={pin.content.externalLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="parchment-btn-secondary flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
+          >
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{pin.content.externalLink.label}</span>
+          </a>
+        )}
+
+        {pin.content.callToAction &&
+          (pin.content.callToAction.actionType === "hire" ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onHire?.();
+              }}
+              className="parchment-btn-primary flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
+            >
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{pin.content.callToAction.label}</span>
+            </button>
+          ) : pin.content.callToAction.actionType === "calendar" ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenCalendar?.();
+              }}
+              className="parchment-btn-primary flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
+            >
+              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{pin.content.callToAction.label}</span>
+            </button>
+          ) : (
+            <a
+              href={pin.content.callToAction.target}
+              className="parchment-btn-primary flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
+            >
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{pin.content.callToAction.label}</span>
+            </a>
+          ))}
+      </div>
+    ) : null;
 
   return (
     <AnimatePresence>
@@ -180,192 +320,281 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
             className="fixed inset-0 z-40 bg-[#040a0e]/40 backdrop-blur-[2px]"
           />
 
-          <motion.article
-            key={pin.id}
-            ref={cardRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="lore-title"
-            initial={{ opacity: 0, scale: 0.94, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 6 }}
-            transition={{ type: "spring", damping: 26, stiffness: 340 }}
-            style={
-              placement?.mode === "anchored"
-                ? {
-                    position: "fixed",
-                    left: placement.left,
-                    top: placement.top,
-                    width: CARD_WIDTH,
-                  }
-                : undefined
-            }
-            className={cardPositionClass}
-          >
-            <div className="relative z-10 flex items-start justify-between gap-2.5 border-b parchment-rule px-4 pb-3 pt-4">
-              <div className="flex min-w-0 items-start gap-2.5">
-                {pin.category === "character" && avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatar.src}
-                    alt=""
-                    className="mt-0.5 h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-[var(--seal)]/35"
-                  />
-                ) : (
-                  <span className="parchment-icon mt-0.5 flex h-8 w-8 shrink-0 rounded-xl">
-                    <DynamicIcon name={pin.iconName} className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                <div className="min-w-0">
+          {placementReady && (
+            <motion.article
+              key={pin.id}
+              ref={cardRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="lore-title"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: positioned ? 1 : 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              style={
+                placement.mode === "anchored"
+                  ? {
+                      position: "fixed",
+                      left: placement.left,
+                      top: placement.top,
+                      width: CARD_WIDTH,
+                      // Keep in layout for measuring while invisible
+                      visibility: positioned ? "visible" : "hidden",
+                    }
+                  : {
+                      visibility: positioned ? "visible" : "hidden",
+                    }
+              }
+              className={cardPositionClass}
+            >
+            <div className="relative [perspective:1200px]">
+              {/* ── Front (defines shell size; stays in layout while flipped) ── */}
+              <motion.div
+                className={`parchment-card flex max-h-[min(72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
+                  hasBackDetail ? "cursor-pointer" : ""
+                }`}
+                initial={false}
+                animate={
+                  flipped
+                    ? { rotateY: 90, opacity: 0 }
+                    : { rotateY: 0, opacity: 1 }
+                }
+                transition={
+                  prefersReducedMotion()
+                    ? { duration: 0 }
+                    : {
+                        duration: 0.32,
+                        ease: [0.4, 0.05, 0.2, 1],
+                        delay: flipped ? 0 : 0.16,
+                        opacity: {
+                          duration: 0.18,
+                          delay: flipped ? 0 : 0.16,
+                        },
+                      }
+                }
+                style={{
+                  transformOrigin: "center center",
+                  pointerEvents: flipped ? "none" : "auto",
+                }}
+                aria-hidden={flipped}
+                onClick={(e) => {
+                  if (isInteractiveTarget(e.target)) return;
+                  toggleFlip();
+                }}
+              >
+                <div className="relative z-10 flex items-center justify-between gap-2 px-4 pb-2 pt-3.5">
                   <span className="parchment-pill inline-flex items-center gap-1">
                     <TypeIcon className="h-2.5 w-2.5" />
                     {pin.content.badge || typeMeta?.label || pin.category}
                   </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {hasBackDetail && (
+                      <span className="flex items-center gap-1 text-[10px] font-medium tracking-wide text-[var(--ink-faint)]">
+                        <RotateCcw className="h-3 w-3" />
+                        Tap to flip
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="parchment-btn shrink-0 rounded-full p-1.5 text-[var(--ink-faint)] hover:text-[var(--ink)]"
+                      aria-label="Close lore"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="parchment-scroll relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-5">
+                  {/* Hero image / icon */}
+                  <div className="relative mb-3 overflow-hidden rounded-xl border border-[rgba(90,70,45,0.22)] bg-[rgba(42,34,24,0.06)] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]">
+                    {pin.category === "character" && avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatar.src}
+                        alt=""
+                        className="aspect-[5/4] w-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="flex aspect-[5/4] w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(ellipse_at_50%_40%,rgba(15,118,110,0.12),transparent_65%)]">
+                        <span className="parchment-icon flex h-16 w-16 rounded-2xl">
+                          <DynamicIcon
+                            name={pin.iconName}
+                            className="h-7 w-7"
+                          />
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+                          {typeMeta?.label}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   <h2
                     id="lore-title"
-                    className="font-display mt-1.5 text-lg font-semibold leading-snug tracking-wide text-[var(--ink)]"
+                    className="font-display text-lg font-semibold leading-snug tracking-wide text-[var(--ink)]"
                   >
                     {pin.title}
                   </h2>
                   <p className="mt-0.5 text-xs font-medium tracking-wide text-[var(--ink-faint)]">
                     {pin.subtitle}
                   </p>
-                </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="parchment-btn shrink-0 rounded-full p-1.5 text-[var(--ink-faint)] hover:text-[var(--ink)]"
-                aria-label="Close lore"
+                  <div className="parchment-body mt-3 rounded-xl p-3 text-sm leading-relaxed">
+                    {pin.content.description}
+                  </div>
+                </div>
+
+                {actionFooter}
+              </motion.div>
+
+              {/* ── Back overlays the same box (must beat .parchment-card { position: relative }) ── */}
+              <motion.div
+                className={`parchment-card flex max-h-[min(72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
+                  hasBackDetail ? "cursor-pointer" : ""
+                }`}
+                initial={false}
+                animate={
+                  flipped
+                    ? { rotateY: 0, opacity: 1 }
+                    : { rotateY: -90, opacity: 0 }
+                }
+                transition={
+                  prefersReducedMotion()
+                    ? { duration: 0 }
+                    : {
+                        duration: 0.32,
+                        ease: [0.4, 0.05, 0.2, 1],
+                        delay: flipped ? 0.16 : 0,
+                        opacity: {
+                          duration: 0.18,
+                          delay: flipped ? 0.16 : 0,
+                        },
+                      }
+                }
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  transformOrigin: "center center",
+                  pointerEvents: flipped ? "auto" : "none",
+                }}
+                aria-hidden={!flipped}
+                onClick={(e) => {
+                  if (isInteractiveTarget(e.target)) return;
+                  toggleFlip();
+                }}
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+                <div className="relative z-10 flex items-start justify-between gap-2 border-b parchment-rule px-4 pb-3 pt-3.5">
+                  <div className="min-w-0">
+                    <span className="parchment-pill inline-flex items-center gap-1">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      Details
+                    </span>
+                    <h2 className="font-display mt-1.5 text-base font-semibold leading-snug tracking-wide text-[var(--ink)]">
+                      {pin.title}
+                    </h2>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+                    <span className="flex items-center gap-1 text-[10px] font-medium tracking-wide text-[var(--ink-faint)]">
+                      <RotateCcw className="h-3 w-3" />
+                      Tap to flip
+                    </span>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="parchment-btn shrink-0 rounded-full p-1.5 text-[var(--ink-faint)] hover:text-[var(--ink)]"
+                      aria-label="Close lore"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
 
-            <div className="parchment-scroll relative z-10 flex-1 overflow-y-auto px-4 py-3">
-              <div className="parchment-body rounded-xl p-3 text-sm leading-relaxed">
-                {pin.content.description}
-              </div>
-
-              {pin.category === "character" &&
-                pin.content.stats &&
-                pin.content.stats.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="mb-2.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
-                      <Sparkles className="h-3 w-3" />
-                      Attributes & Proficiency
-                    </h3>
-                    <div className="space-y-2.5">
-                      {pin.content.stats.map((stat, index) => (
-                        <div key={stat.label}>
-                          <div className="mb-1 flex items-baseline justify-between">
-                            <span className="text-xs text-[var(--ink-soft)]">
-                              {stat.label}
-                            </span>
-                            <span className="font-mono text-[10px] font-semibold text-[var(--seal)]">
-                              {stat.value}
-                              <span className="text-[var(--ink-faint)]">%</span>
-                            </span>
+                <div className="parchment-scroll relative z-10 flex-1 overflow-y-auto px-4 pb-5 pt-3">
+                  {pin.content.stats && pin.content.stats.length > 0 && (
+                    <div>
+                      <h3 className="mb-2.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
+                        <Sparkles className="h-3 w-3" />
+                        Skills & Proficiency
+                      </h3>
+                      <div className="space-y-2.5">
+                        {pin.content.stats.map((stat, index) => (
+                          <div key={stat.label}>
+                            <div className="mb-1 flex items-baseline justify-between">
+                              <span className="text-xs text-[var(--ink-soft)]">
+                                {stat.label}
+                              </span>
+                              <span className="font-mono text-[10px] font-semibold text-[var(--seal)]">
+                                {stat.value}
+                                <span className="text-[var(--ink-faint)]">%</span>
+                              </span>
+                            </div>
+                            <div className="parchment-stat-track">
+                              <motion.div
+                                initial={false}
+                                animate={{
+                                  width: flipped ? `${stat.value}%` : 0,
+                                }}
+                                transition={{
+                                  duration: 0.85,
+                                  delay: flipped ? index * 0.05 : 0,
+                                  ease: [0.22, 1, 0.36, 1],
+                                }}
+                                className="parchment-stat-fill"
+                              />
+                            </div>
                           </div>
-                          <div className="parchment-stat-track">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${stat.value}%` }}
-                              transition={{
-                                duration: 0.9,
-                                delay: index * 0.06,
-                                ease: [0.22, 1, 0.36, 1],
-                              }}
-                              className="parchment-stat-fill"
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-              {pin.category === "achievement" && (
-                <div className="mt-4 rounded-xl border border-[var(--seal)]/25 bg-[var(--seal)]/8 px-3 py-2.5 text-center">
-                  <Trophy className="mx-auto h-5 w-5 text-[var(--seal)]" />
-                  <p className="mt-1.5 font-display text-sm text-[var(--ink)]">
-                    {pin.content.badge || "Achievement Unlocked"}
-                  </p>
-                </div>
-              )}
+                  {pin.category === "achievement" && (
+                    <div
+                      className={`${pin.content.stats?.length ? "mt-4" : ""} rounded-xl border border-[var(--seal)]/25 bg-[var(--seal)]/8 px-3 py-2.5 text-center`}
+                    >
+                      <Trophy className="mx-auto h-5 w-5 text-[var(--seal)]" />
+                      <p className="mt-1.5 font-display text-sm text-[var(--ink)]">
+                        {pin.content.badge || "Achievement Unlocked"}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--ink-soft)]">
+                        {pin.subtitle}
+                      </p>
+                    </div>
+                  )}
 
-              {pin.content.tags && pin.content.tags.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
-                    {pin.category === "project"
-                      ? "Stack & Concepts"
-                      : pin.category === "character"
-                        ? "Traits & Focus"
-                        : "Tags"}
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {pin.content.tags.map((tag) => (
-                      <span key={tag} className="parchment-tag">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  {pin.content.tags && pin.content.tags.length > 0 && (
+                    <div
+                      className={
+                        pin.content.stats?.length ||
+                        pin.category === "achievement"
+                          ? "mt-4"
+                          : ""
+                      }
+                    >
+                      <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
+                        {tagsHeading(pin.category)}
+                      </h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pin.content.tags.map((tag) => (
+                          <span key={tag} className="parchment-tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {pin.content.markdownBody && (
+                    <div className="parchment-body mt-4 rounded-xl p-3 text-sm leading-relaxed whitespace-pre-wrap">
+                      {pin.content.markdownBody}
+                    </div>
+                  )}
                 </div>
-              )}
+              </motion.div>
             </div>
-
-            {(pin.content.externalLink || pin.content.callToAction) && (
-              <div className="relative z-10 space-y-1.5 border-t parchment-rule px-4 py-3">
-                {pin.content.externalLink && (
-                  <a
-                    href={pin.content.externalLink.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="parchment-btn flex w-full items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-medium"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5 text-[var(--seal)]" />
-                    {pin.content.externalLink.label}
-                  </a>
-                )}
-
-                {pin.content.callToAction &&
-                  (pin.content.callToAction.actionType === "hire" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onHire?.();
-                      }}
-                      className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {pin.content.callToAction.label}
-                    </button>
-                  ) : pin.content.callToAction.actionType === "calendar" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onOpenCalendar?.();
-                      }}
-                      className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
-                    >
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {pin.content.callToAction.label}
-                    </button>
-                  ) : (
-                    <a
-                      href={pin.content.callToAction.target}
-                      className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
-                    >
-                      <Mail className="h-3.5 w-3.5" />
-                      {pin.content.callToAction.label}
-                    </a>
-                  ))}
-              </div>
-            )}
           </motion.article>
+          )}
         </>
       )}
     </AnimatePresence>

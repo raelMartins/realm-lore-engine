@@ -38,6 +38,15 @@ export function saveExploredPinIds(worldId: string, ids: Set<string>): void {
   }
 }
 
+export function clearExploredPinIds(worldId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(explorationStorageKey(worldId));
+  } catch {
+    /* private mode / quota — progress is best-effort */
+  }
+}
+
 /**
  * Mark a pin explored if it is discoverable. Returns the updated set
  * (same reference if unchanged).

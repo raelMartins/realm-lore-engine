@@ -19,6 +19,7 @@ import {
   validateGuildPlacement,
 } from "@/lib/world/placement";
 import {
+  clearExploredPinIds,
   countExploredDiscoverable,
   loadExploredPinIds,
   markPinExplored,
@@ -598,6 +599,11 @@ export default function Home() {
         <ExplorationProgress
           explored={exploration.explored}
           total={exploration.total}
+          onClear={() => {
+            clearExploredPinIds(worldId);
+            setExploredIds(new Set());
+            soundFx.playSelectSound();
+          }}
         />
       </div>
 
