@@ -49,7 +49,7 @@ export interface LorePin {
     };
     callToAction?: {
       label: string;
-      actionType: 'email' | 'calendar' | 'modal';
+      actionType: 'email' | 'calendar' | 'modal' | 'hire';
       target: string;
     };
   };

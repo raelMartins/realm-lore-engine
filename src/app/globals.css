@@ -393,4 +393,167 @@ body {
   }
 }
 
+@keyframes hire-confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0) rotate(540deg);
+    opacity: 0.15;
+  }
+}
+
+@keyframes hire-exit-shrink {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  70% {
+    transform: scale(0.35);
+    opacity: 0.85;
+    filter: brightness(1.4);
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+    filter: brightness(2);
+  }
+}
+
+@keyframes hire-exit-portal {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: hue-rotate(0deg) brightness(1);
+    box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.65);
+  }
+  45% {
+    transform: scale(1.12) rotate(160deg);
+    opacity: 1;
+    filter: hue-rotate(50deg) brightness(1.45);
+    box-shadow: 0 0 0 14px rgba(45, 212, 191, 0.25);
+  }
+  100% {
+    transform: scale(0.08) rotate(400deg);
+    opacity: 0;
+    filter: hue-rotate(100deg) brightness(2);
+    box-shadow: 0 0 0 36px rgba(45, 212, 191, 0);
+  }
+}
+
+@keyframes hire-enter-portal {
+  0% {
+    transform: scale(0.08) rotate(-400deg);
+    opacity: 0;
+    filter: hue-rotate(100deg) brightness(2);
+    box-shadow: 0 0 0 36px rgba(45, 212, 191, 0);
+  }
+  55% {
+    transform: scale(1.12) rotate(-40deg);
+    opacity: 1;
+    filter: hue-rotate(40deg) brightness(1.35);
+    box-shadow: 0 0 0 12px rgba(45, 212, 191, 0.3);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: hue-rotate(0deg) brightness(1);
+    box-shadow: 0 0 0 0 rgba(45, 212, 191, 0);
+  }
+}
+
+@keyframes hire-enter-shrink {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes hire-enter-burst {
+  0% {
+    transform: scale(2.2);
+    opacity: 0;
+    filter: brightness(2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+@keyframes hire-exit-burst {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  35% {
+    transform: scale(1.55);
+    opacity: 1;
+    filter: brightness(1.8);
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+    filter: brightness(2.5);
+  }
+}
+
+.hire-exit-shrink {
+  animation: hire-exit-shrink 0.85s ease-in forwards;
+}
+
+.hire-exit-portal {
+  animation: hire-exit-portal 1.05s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  border-radius: 9999px;
+}
+
+.hire-exit-burst {
+  animation: hire-exit-burst 0.7s ease-out forwards;
+}
+
+.hire-enter-portal {
+  animation: hire-enter-portal 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  border-radius: 9999px;
+}
+
+.hire-enter-shrink {
+  animation: hire-enter-shrink 0.55s ease-out forwards;
+}
+
+.hire-enter-burst {
+  animation: hire-enter-burst 0.55s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hire-exit-shrink,
+  .hire-exit-portal,
+  .hire-exit-burst,
+  .hire-enter-portal,
+  .hire-enter-shrink,
+  .hire-enter-burst {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  @keyframes hire-confetti-fall {
+    0%,
+    100% {
+      opacity: 0;
+    }
+  }
+}
+
+.realm-united .glass-panel {
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+
 

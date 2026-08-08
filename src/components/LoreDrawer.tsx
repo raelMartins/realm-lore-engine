@@ -18,6 +18,7 @@ import { getAvatarById } from "@/config/avatars";
 interface LoreDrawerProps {
   pin: LorePin | null;
   onClose: () => void;
+  onHire?: () => void;
 }
 
 type CardPlacement =
@@ -90,7 +91,11 @@ function computePlacement(
   return { mode: "anchored", left, top };
 }
 
-export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
+export const LoreDrawer: React.FC<LoreDrawerProps> = ({
+  pin,
+  onClose,
+  onHire,
+}) => {
   const cardRef = useRef<HTMLElement>(null);
   const [placement, setPlacement] = useState<CardPlacement | null>(null);
 
@@ -321,15 +326,28 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({ pin, onClose }) => {
                   </a>
                 )}
 
-                {pin.content.callToAction && (
-                  <a
-                    href={pin.content.callToAction.target}
-                    className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    {pin.content.callToAction.label}
-                  </a>
-                )}
+                {pin.content.callToAction &&
+                  (pin.content.callToAction.actionType === "hire" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onHire?.();
+                      }}
+                      className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {pin.content.callToAction.label}
+                    </button>
+                  ) : (
+                    <a
+                      href={pin.content.callToAction.target}
+                      className="parchment-btn-primary flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-xs font-semibold"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      {pin.content.callToAction.label}
+                    </a>
+                  ))}
               </div>
             )}
           </motion.article>

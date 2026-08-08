@@ -18,6 +18,17 @@ import {
 } from "@/lib/mapCoordinates";
 import { RealmSide } from "@/types/world";
 import { getAvatarById } from "@/config/avatars";
+import type { HireMotion } from "@/lib/hire";
+
+export type CameraCommand =
+  | {
+      type: "focus-pin";
+      pinId: string;
+      scale?: number;
+      durationMs?: number;
+      token: number;
+    }
+  | { type: "reset"; token: number; durationMs?: number };
 
 interface MapCanvasProps {
   data: CompanyLoreConfig;
@@ -31,6 +42,20 @@ interface MapCanvasProps {
   onPlaceAttempt?: (coords: { x: number; y: number }) => void;
   /** Briefly animate this pin id after creation. */
   spawnPinId?: string | null;
+  /** Shared alliance look across both isles. */
+  united?: boolean;
+  /** Pin playing exit motion (departure). */
+  exitPinId?: string | null;
+  exitMotion?: HireMotion | null;
+  /** Pin playing enter motion (arrival). */
+  enterPinId?: string | null;
+  enterMotion?: HireMotion | null;
+  /** True while hire cinematic is playing — soft-locks map chrome. */
+  hireBusy?: boolean;
+  /** Hide pin visually but keep it in the DOM for camera focus. */
+  hiddenPinId?: string | null;
+  /** One-shot camera instructions for hire cinematic / restore. */
+  cameraCommand?: CameraCommand | null;
 }
 
 const CanvasControls = () => {
@@ -85,18 +110,43 @@ const RealmFocusTargets = () => (
 );
 
 /**
- * When a realm overview opens, zoom/center that island.
- * When it closes, ease back to the fitted full-map view.
+ * Realm overview zoom, plus hire-cinematic camera commands.
  */
 const MapFocusController = ({
   selectedRealm,
+  cameraCommand,
+  cinematicLock,
 }: {
   selectedRealm: RealmSide | null;
+  cameraCommand?: CameraCommand | null;
+  cinematicLock?: boolean;
 }) => {
   const { zoomToElement, resetTransform } = useControls();
   const previousRealm = React.useRef<RealmSide | null>(null);
+  const lastToken = React.useRef<number | null>(null);
 
   React.useEffect(() => {
+    if (!cameraCommand || cameraCommand.token === lastToken.current) return;
+    lastToken.current = cameraCommand.token;
+
+    if (cameraCommand.type === "reset") {
+      resetTransform(cameraCommand.durationMs ?? 420, "easeOut");
+      previousRealm.current = null;
+      return;
+    }
+
+    const id = `pin-focus-${cameraCommand.pinId}`;
+    const scale = cameraCommand.scale ?? 2.65;
+    const duration = cameraCommand.durationMs ?? 560;
+    const t = window.setTimeout(() => {
+      zoomToElement(id, scale, duration, "easeOut");
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [cameraCommand, zoomToElement, resetTransform]);
+
+  React.useEffect(() => {
+    if (cinematicLock || cameraCommand) return;
+
     if (selectedRealm) {
       const id = `realm-focus-${selectedRealm}`;
       const t = window.setTimeout(() => {
@@ -106,12 +156,17 @@ const MapFocusController = ({
       return () => window.clearTimeout(t);
     }
 
-    // Only ease out when closing an open realm — not on first mount
     if (previousRealm.current) {
       resetTransform(420, "easeOut");
       previousRealm.current = null;
     }
-  }, [selectedRealm, zoomToElement, resetTransform]);
+  }, [
+    selectedRealm,
+    cinematicLock,
+    cameraCommand,
+    zoomToElement,
+    resetTransform,
+  ]);
 
   return null;
 };
@@ -187,6 +242,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   placementMode = false,
   onPlaceAttempt,
   spawnPinId = null,
+  united = false,
+  exitPinId = null,
+  exitMotion = null,
+  enterPinId = null,
+  enterMotion = null,
+  hireBusy = false,
+  hiddenPinId = null,
+  cameraCommand = null,
 }) => {
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!placementMode || !onPlaceAttempt) return;
@@ -199,7 +262,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 z-0 select-none overflow-hidden bg-realm-void">
+    <div
+      className={`absolute inset-0 z-0 select-none overflow-hidden bg-realm-void ${
+        united ? "realm-united" : ""
+      }`}
+    >
       <TransformWrapper
         initialScale={1}
         minScale={1}
@@ -216,10 +283,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         {() => (
           <>
             <CanvasControls />
-            <MapFocusController selectedRealm={selectedRealm} />
+            <MapFocusController
+              selectedRealm={selectedRealm}
+              cameraCommand={cameraCommand}
+              cinematicLock={hireBusy}
+            />
             <TransformComponent
-              wrapperClassName="!flex !h-full !w-full !items-center !justify-center"
-              contentClassName="!w-auto !h-auto"
+              wrapperClass="!flex !h-full !w-full !items-center !justify-center"
+              contentClass="!w-auto !h-auto"
             >
               {/*
                 MapStage — fixed aspect matching realm-map.png (1024×531).
@@ -278,7 +349,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 </div>
 
                 {/* Quest routes — same 0–100 space as pins */}
-                <QuestTrail pins={data.pins} />
+                <QuestTrail pins={data.pins} united={united} />
+
+                {united && (
+                  <div
+                    className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_30%_45%,rgba(45,212,191,0.14),transparent_45%),radial-gradient(ellipse_at_75%_50%,rgba(245,158,11,0.12),transparent_48%)] mix-blend-screen"
+                    aria-hidden
+                  />
+                )}
 
                 {/* Pin layer passes events through empty space to realms */}
                 <div className="pointer-events-none absolute inset-0 z-[2]">
@@ -289,36 +367,86 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     const showAvatar =
                       pin.category === "character" && Boolean(avatar);
                     const isSpawn = spawnPinId === pin.id;
+                    const isExiting =
+                      exitPinId === pin.id && Boolean(exitMotion);
+                    const isEntering =
+                      enterPinId === pin.id && Boolean(enterMotion);
+                    const exitClass =
+                      exitMotion === "portal"
+                        ? "hire-exit-portal"
+                        : exitMotion === "burst"
+                          ? "hire-exit-burst"
+                          : exitMotion === "shrink"
+                            ? "hire-exit-shrink"
+                            : "";
+                    const enterClass =
+                      enterMotion === "portal"
+                        ? "hire-enter-portal"
+                        : enterMotion === "burst"
+                          ? "hire-enter-burst"
+                          : enterMotion === "shrink"
+                            ? "hire-enter-shrink"
+                            : "";
+
+                    const isHidden = hiddenPinId === pin.id;
 
                     return (
                       <button
                         key={pin.id}
+                        id={`pin-focus-${pin.id}`}
                         type="button"
                         data-pin-id={pin.id}
                         data-realm={pin.realm}
                         onClick={(e) => {
-                          if (placementMode) {
+                          if (placementMode || hireBusy || isHidden) {
                             e.stopPropagation();
                             return;
                           }
                           onSelectPin(pin);
                         }}
                         onMouseEnter={() => {
-                          if (!placementMode) soundFx.playHoverSound();
+                          if (!placementMode && !hireBusy && !isHidden) {
+                            soundFx.playHoverSound();
+                          }
                         }}
                         style={{
                           left: `${pin.coordinates.x}%`,
                           top: `${pin.coordinates.y}%`,
+                          opacity: isHidden ? 0 : 1,
                         }}
-                        className={`group pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 focus:outline-none ${
+                        className={`group pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer focus:outline-none ${
                           isSelected ? "z-30 scale-125" : "hover:scale-110"
-                        } ${placementMode ? "pointer-events-none" : ""}`}
+                        } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-all duration-300"} ${
+                          placementMode || hireBusy || isHidden
+                            ? "pointer-events-none"
+                            : ""
+                        } ${
+                          united && isCompany
+                            ? "ring-1 ring-teal-300/30"
+                            : ""
+                        }`}
+                        aria-hidden={isHidden}
                       >
                         <div
+                          key={`${pin.id}-${
+                            isExiting
+                              ? `exit-${exitMotion}`
+                              : isEntering
+                                ? `enter-${enterMotion}`
+                                : isSpawn
+                                  ? "spawn"
+                                  : "idle"
+                          }`}
                           className={
-                            isSpawn
-                              ? "animate-[pin-spawn_0.7s_ease-out]"
-                              : undefined
+                            [
+                              isSpawn && !isEntering
+                                ? "animate-[pin-spawn_0.7s_ease-out]"
+                                : "",
+                              isExiting ? exitClass : "",
+                              isEntering ? enterClass : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ") || undefined
                           }
                         >
                         <div

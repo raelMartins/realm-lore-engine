@@ -52,6 +52,11 @@ export const defaultWorldData: CompanyLoreConfig = {
           label: 'View Full Portfolio',
           url: 'https://aboutmartins.vercel.app/',
         },
+        callToAction: {
+          label: 'Offer Alliance',
+          actionType: 'hire',
+          target: '#forge-alliance',
+        },
       },
     },
     {
@@ -134,9 +139,9 @@ export const defaultWorldData: CompanyLoreConfig = {
         description:
           'Looking to build high-polish spatial tools, lore platforms, and complex web UIs alongside world-class teams.',
         callToAction: {
-          label: 'Initiate Contact',
-          actionType: 'email',
-          target: 'mailto:your-email@example.com',
+          label: 'Forge Alliance',
+          actionType: 'hire',
+          target: '#forge-alliance',
         },
       },
     },

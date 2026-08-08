@@ -5,6 +5,7 @@ import { LorePin, RealmSide } from "@/types/world";
 
 interface QuestTrailProps {
   pins: LorePin[];
+  united?: boolean;
 }
 
 /**
@@ -57,14 +58,16 @@ const REALM_TRAIL: Record<
 function RealmPath({
   pins,
   realm,
+  styleOverride,
 }: {
   pins: LorePin[];
   realm: RealmSide;
+  styleOverride?: (typeof REALM_TRAIL)[RealmSide];
 }) {
   const pathD = buildQuestPath(pins);
   if (!pathD) return null;
 
-  const style = REALM_TRAIL[realm];
+  const style = styleOverride ?? REALM_TRAIL[realm];
 
   return (
     <g>
@@ -92,10 +95,20 @@ function RealmPath({
   );
 }
 
+const ALLIANCE_TRAIL = {
+  glow: "rgba(94, 234, 212, 0.35)",
+  gradientId: "quest-trail-alliance",
+  stops: ["#5eead4", "#e8eef2", "#f59e0b"] as [string, string, string],
+};
+
 /**
  * Dual-realm quest trails — one route per island, same 0–100 map space.
+ * When united, both trails share the alliance palette.
  */
-export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
+export const QuestTrail: React.FC<QuestTrailProps> = ({
+  pins,
+  united = false,
+}) => {
   const adventurerPins = pins.filter((p) => p.realm === "adventurer");
   const companyPins = pins.filter((p) => p.realm === "company");
 
@@ -141,6 +154,22 @@ export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
             />
           ))}
         </linearGradient>
+        <linearGradient
+          id={ALLIANCE_TRAIL.gradientId}
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
+          {ALLIANCE_TRAIL.stops.map((color, i) => (
+            <stop
+              key={color}
+              offset={`${(i / 2) * 100}%`}
+              stopColor={color}
+              stopOpacity={0.85}
+            />
+          ))}
+        </linearGradient>
         <filter
           id="quest-trail-glow"
           x="-20%"
@@ -156,8 +185,20 @@ export const QuestTrail: React.FC<QuestTrailProps> = ({ pins }) => {
         </filter>
       </defs>
 
-      <RealmPath pins={adventurerPins} realm="adventurer" />
-      <RealmPath pins={companyPins} realm="company" />
+      {adventurerPins.length >= 2 && (
+        <RealmPath
+          pins={adventurerPins}
+          realm="adventurer"
+          styleOverride={united ? ALLIANCE_TRAIL : undefined}
+        />
+      )}
+      {companyPins.length >= 2 && (
+        <RealmPath
+          pins={companyPins}
+          realm="company"
+          styleOverride={united ? ALLIANCE_TRAIL : undefined}
+        />
+      )}
     </svg>
   );
 };
