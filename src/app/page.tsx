@@ -6,12 +6,16 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
-import { LorePin, RealmSide } from "@/types/world";
+import { CompanyLoreConfig, LorePin, RealmSide } from "@/types/world";
 import { musicFx, soundFx } from "@/lib/audio";
 import { Volume2, VolumeX, Music2, Music } from "lucide-react";
 
+type WorldApiResponse = CompanyLoreConfig & {
+  _meta?: { source: string; worldId: string };
+};
+
 export default function Home() {
-  const worldData = getCompanyData();
+  const [worldData, setWorldData] = useState<CompanyLoreConfig | null>(null);
   const [selectedPin, setSelectedPin] = useState<LorePin | null>(null);
   const [selectedRealm, setSelectedRealm] = useState<RealmSide | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -19,6 +23,28 @@ export default function Home() {
 
   useEffect(() => {
     void musicFx.start();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const res = await fetch("/api/world");
+        if (!res.ok) throw new Error(`World API ${res.status}`);
+        const json = (await res.json()) as WorldApiResponse;
+        const { _meta: _ignored, ...data } = json;
+        if (!cancelled) setWorldData(data);
+      } catch (error) {
+        console.error("Failed to load /api/world, using local fallback:", error);
+        if (!cancelled) setWorldData(getCompanyData());
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSelectPin = (pin: LorePin) => {
@@ -42,6 +68,16 @@ export default function Home() {
     const enabled = await musicFx.toggle();
     setMusicOn(enabled);
   };
+
+  if (!worldData) {
+    return (
+      <main className="realm-atmosphere relative flex h-screen w-full items-center justify-center overflow-hidden">
+        <p className="font-display text-sm tracking-[0.2em] text-realm-mist/80 uppercase">
+          Charting the realm…
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="realm-atmosphere relative h-screen w-full overflow-hidden">

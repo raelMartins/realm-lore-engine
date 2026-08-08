@@ -26,7 +26,7 @@ function normalizeCategory(raw: string | undefined): PinType {
   return LEGACY_CATEGORY_MAP[raw] ?? 'project';
 }
 
-function normalizePin(pin: LorePin): LorePin {
+export function normalizePin(pin: LorePin): LorePin {
   const realm = inferRealm(pin);
   const category = normalizeCategory(pin.category);
   let avatarId = pin.avatarId;
@@ -47,7 +47,7 @@ function normalizePin(pin: LorePin): LorePin {
   };
 }
 
-function normalizeConfig(raw: CompanyLoreConfig): CompanyLoreConfig {
+export function normalizeConfig(raw: CompanyLoreConfig): CompanyLoreConfig {
   return {
     ...defaultWorldData,
     ...raw,
