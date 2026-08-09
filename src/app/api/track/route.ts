@@ -253,3 +253,86 @@ export async function GET(req: NextRequest) {
     })),
   });
 }
+
+type DeleteBody = {
+  /** Delete these visit ids (scoped to current world). */
+  ids?: string[];
+  /** Delete every visit for the current world. */
+  all?: boolean;
+};
+
+/** Delete selected visits (or all) for the tracking dashboard (secret required). */
+export async function DELETE(req: NextRequest) {
+  const secret =
+    req.headers.get('x-tracking-secret') ??
+    req.nextUrl.searchParams.get('secret');
+
+  if (!verifyTrackingSecret(secret)) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
+
+  if (!isTursoConfigured()) {
+    return NextResponse.json({ error: 'Tracking storage is not configured.' }, { status: 503 });
+  }
+
+  const db = getTursoClient();
+  if (!db) {
+    return NextResponse.json({ error: 'Tracking storage is not configured.' }, { status: 503 });
+  }
+
+  let body: DeleteBody;
+  try {
+    body = (await req.json()) as DeleteBody;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 });
+  }
+
+  await ensureSchema(db);
+  const worldId = getWorldId();
+
+  if (body.all === true) {
+    await db.execute({
+      sql: `DELETE FROM visit_events WHERE world_id = ?`,
+      args: [worldId],
+    });
+    const visitsDel = await db.execute({
+      sql: `DELETE FROM visits WHERE world_id = ?`,
+      args: [worldId],
+    });
+    return NextResponse.json({
+      ok: true,
+      deleted: Number(visitsDel.rowsAffected ?? 0),
+      all: true,
+    });
+  }
+
+  const ids = Array.isArray(body.ids)
+    ? [...new Set(body.ids.map((id) => String(id).trim()).filter(Boolean))].slice(
+        0,
+        200,
+      )
+    : [];
+
+  if (ids.length === 0) {
+    return NextResponse.json(
+      { error: 'Provide ids or all: true.' },
+      { status: 400 },
+    );
+  }
+
+  const placeholders = ids.map(() => '?').join(',');
+  await db.execute({
+    sql: `DELETE FROM visit_events WHERE world_id = ? AND visit_id IN (${placeholders})`,
+    args: [worldId, ...ids],
+  });
+  const visitsDel = await db.execute({
+    sql: `DELETE FROM visits WHERE world_id = ? AND id IN (${placeholders})`,
+    args: [worldId, ...ids],
+  });
+
+  return NextResponse.json({
+    ok: true,
+    deleted: Number(visitsDel.rowsAffected ?? 0),
+    all: false,
+  });
+}

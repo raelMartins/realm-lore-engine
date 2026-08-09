@@ -86,7 +86,9 @@ export default function TrackingPage() {
   const [data, setData] = useState<TrackResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     try {
@@ -122,6 +124,13 @@ export default function TrackingPage() {
       }
       setData(json);
       setAuthedSecret(key);
+      setSelected((prev) => {
+        const next = new Set<string>();
+        for (const id of prev) {
+          if (json.visits.some((v) => v.id === id)) next.add(id);
+        }
+        return next;
+      });
       try {
         sessionStorage.setItem(SECRET_KEY, key);
       } catch {
@@ -145,11 +154,84 @@ export default function TrackingPage() {
     void load(key, hideSelf);
   };
 
+  const visits = data?.visits ?? [];
+
   const totals = useMemo(() => {
-    const visits = data?.visits ?? [];
     const events = visits.reduce((n, v) => n + v.events.length, 0);
     return { visits: visits.length, events };
-  }, [data]);
+  }, [visits]);
+
+  const allVisibleSelected =
+    visits.length > 0 && visits.every((v) => selected.has(v.id));
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelected((prev) => {
+      if (visits.length === 0) return prev;
+      if (visits.every((v) => prev.has(v.id))) {
+        const next = new Set(prev);
+        for (const v of visits) next.delete(v.id);
+        return next;
+      }
+      const next = new Set(prev);
+      for (const v of visits) next.add(v.id);
+      return next;
+    });
+  };
+
+  const deleteVisits = async (body: { ids?: string[]; all?: boolean }) => {
+    if (!authedSecret || deleting) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/track", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tracking-secret": authedSecret,
+        },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json()) as { error?: string; deleted?: number };
+      if (!res.ok) {
+        setError(json.error || "Could not delete visits.");
+        return;
+      }
+      setSelected(new Set());
+      setExpanded(null);
+      await load(authedSecret, hideSelf);
+    } catch {
+      setError("Network error deleting visits.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const onDeleteSelected = () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    const ok = window.confirm(
+      `Delete ${ids.length} selected visit${ids.length === 1 ? "" : "s"}? This cannot be undone.`,
+    );
+    if (!ok) return;
+    void deleteVisits({ ids });
+  };
+
+  const onDeleteAll = () => {
+    const ok = window.confirm(
+      "Delete ALL visits for this world? This cannot be undone.",
+    );
+    if (!ok) return;
+    void deleteVisits({ all: true });
+  };
 
   return (
     <main className="realm-atmosphere min-h-dvh px-4 py-8 text-realm-silver sm:px-8">
@@ -225,6 +307,7 @@ export default function TrackingPage() {
                 onClick={() => {
                   setAuthedSecret(null);
                   setData(null);
+                  setSelected(new Set());
                   try {
                     sessionStorage.removeItem(SECRET_KEY);
                   } catch {
@@ -241,6 +324,38 @@ export default function TrackingPage() {
               </p>
             </div>
 
+            {visits.length > 0 && (
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <label className="glass-panel flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-realm-mist">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAllVisible}
+                    className="accent-teal-400"
+                  />
+                  Select all
+                </label>
+                <button
+                  type="button"
+                  disabled={deleting || selected.size === 0}
+                  onClick={onDeleteSelected}
+                  className="rounded-full border border-rose-400/35 bg-rose-950/40 px-3 py-1.5 text-xs font-semibold text-rose-200 hover:bg-rose-900/50 disabled:opacity-40"
+                >
+                  {deleting
+                    ? "Deleting…"
+                    : `Delete selected${selected.size ? ` (${selected.size})` : ""}`}
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={onDeleteAll}
+                  className="rounded-full border border-rose-400/25 bg-transparent px-3 py-1.5 text-xs text-rose-200/90 hover:bg-rose-950/30 disabled:opacity-40"
+                >
+                  Delete all
+                </button>
+              </div>
+            )}
+
             {error && (
               <p className="mb-3 text-sm text-rose-300/90">{error}</p>
             )}
@@ -253,48 +368,62 @@ export default function TrackingPage() {
             )}
 
             <div className="space-y-3">
-              {(data?.visits ?? []).length === 0 ? (
+              {visits.length === 0 ? (
                 <p className="glass-panel rounded-2xl px-4 py-8 text-center text-sm text-realm-silver-muted">
                   {loading ? "Loading…" : "No visits recorded yet."}
                 </p>
               ) : (
-                data!.visits.map((visit) => {
+                visits.map((visit) => {
                   const open = expanded === visit.id;
                   const duration = visitDurationLabel(visit);
+                  const isChecked = selected.has(visit.id);
                   return (
                     <article
                       key={visit.id}
-                      className="glass-panel-strong overflow-hidden rounded-2xl"
+                      className={`glass-panel-strong overflow-hidden rounded-2xl ${
+                        isChecked ? "ring-1 ring-rose-400/35" : ""
+                      }`}
                     >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpanded((id) =>
-                            id === visit.id ? null : visit.id,
-                          )
-                        }
-                        className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-realm-silver">
-                            {placeLabel(visit)}
-                            {visit.isSelf ? (
-                              <span className="ml-2 rounded-full border border-violet-300/30 bg-violet-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200">
-                                You
-                              </span>
-                            ) : null}
-                          </p>
-                          <p className="mt-0.5 text-xs text-realm-silver-muted">
-                            {formatWhen(visit.startedAt)}
-                            {duration ? ` · ${duration}` : ""}
-                            {visit.ip ? ` · ${visit.ip}` : ""}
-                            {` · ${visit.events.length} events`}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-xs text-realm-teal-soft">
-                          {open ? "Hide" : "Events"}
-                        </span>
-                      </button>
+                      <div className="flex items-start gap-2 px-3 py-3.5 sm:px-4">
+                        <label className="mt-1 flex shrink-0 items-center pt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSelect(visit.id)}
+                            className="accent-teal-400"
+                            aria-label={`Select visit ${placeLabel(visit)}`}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpanded((id) =>
+                              id === visit.id ? null : visit.id,
+                            )
+                          }
+                          className="flex min-w-0 flex-1 items-start justify-between gap-3 text-left"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-realm-silver">
+                              {placeLabel(visit)}
+                              {visit.isSelf ? (
+                                <span className="ml-2 rounded-full border border-violet-300/30 bg-violet-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200">
+                                  You
+                                </span>
+                              ) : null}
+                            </p>
+                            <p className="mt-0.5 text-xs text-realm-silver-muted">
+                              {formatWhen(visit.startedAt)}
+                              {duration ? ` · ${duration}` : ""}
+                              {visit.ip ? ` · ${visit.ip}` : ""}
+                              {` · ${visit.events.length} events`}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-xs text-realm-teal-soft">
+                            {open ? "Hide" : "Events"}
+                          </span>
+                        </button>
+                      </div>
                       {open && (
                         <ul className="glass-scroll max-h-64 space-y-1.5 overflow-y-auto border-t border-white/10 px-4 py-3">
                           {visit.events.length === 0 ? (
