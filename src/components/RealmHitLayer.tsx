@@ -4,7 +4,12 @@ import React, { useRef, useState } from "react";
 import { RealmSide } from "@/types/world";
 import { REALM_HIT_LABELS, REALM_HIT_PATHS } from "@/config/realmHitPaths";
 
-export type RealmColorPhase = "idle" | "celebrate" | "aligning" | "aligned";
+export type RealmColorPhase =
+  | "idle"
+  | "celebrate"
+  | "aligning"
+  | "aligned"
+  | "reverting";
 
 interface RealmHitLayerProps {
   labels?: {
@@ -83,7 +88,8 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
   const [hovered, setHovered] = useState<RealmSide | null>(null);
   const pointerDown = useRef<{ x: number; y: number } | null>(null);
   const forceHover = colorPhase === "celebrate" || colorPhase === "aligning";
-  const slowAlign = colorPhase === "aligning";
+  const slowAlign =
+    colorPhase === "aligning" || colorPhase === "reverting";
 
   const setHover = (realm: RealmSide | null) => {
     setHovered(realm);

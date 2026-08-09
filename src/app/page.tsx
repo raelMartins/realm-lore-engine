@@ -87,6 +87,7 @@ export default function Home() {
   const [realmColorPhase, setRealmColorPhase] =
     useState<RealmColorPhase>("idle");
   const [showTransferTrails, setShowTransferTrails] = useState(false);
+  const [trailsRetreating, setTrailsRetreating] = useState(false);
   const [trailSpanMs, setTrailSpanMs] = useState(9000);
   const [confettiOn, setConfettiOn] = useState(false);
   const [confettiHeavy, setConfettiHeavy] = useState(false);
@@ -365,28 +366,98 @@ export default function Home() {
   };
 
   const unforgeAlliance = async () => {
-    if (hireBusy) return;
-    allianceEpoch.current += 1;
+    if (hireBusy || !allianceForged) return;
+    const motion: HireMotion = "portal";
+    const epoch = ++allianceEpoch.current;
+
+    setHireBusy(true);
     setCalendarOpen(false);
     setCongratsOpen(false);
     setConfettiOn(false);
     setConfettiHeavy(false);
+    setSelectedPin(null);
+    setSelectedRealm(null);
+
+    const reduced = prefersReducedMotion();
+    const focusMs = reduced ? 200 : 700;
+    const exitMs = reduced ? 80 : 1100;
+    const holdGoneMs = reduced ? 120 : 380;
+    const panMs = reduced ? 320 : 1000;
+    const panWaitMs = reduced ? 360 : 1150;
+    const enterMs = reduced ? 120 : 950;
+    const colorMs = reduced ? 200 : 2800;
+    const retreatMs = reduced ? 200 : 1400;
+
+    // 1) Focus east pin; start color revert + arrow retreat
+    issueCamera({
+      type: "focus-pin",
+      pinId: ADVENTURER_PIN_ID,
+      scale: 2.75,
+      durationMs: 600,
+    });
+    setTrailsRetreating(true);
     setAllianceForged(false);
-    setShowTransferTrails(false);
-    setRealmColorPhase("idle");
+    setRealmColorPhase("reverting");
+    soundFx.playSelectSound();
+    await sleep(focusMs);
+    if (allianceEpoch.current !== epoch) return;
+
+    // 2) Portal out from guild shore
+    setExitPinId(ADVENTURER_PIN_ID);
+    setExitMotion(motion);
+    soundFx.playSelectSound();
+    await sleep(exitMs);
+    if (allianceEpoch.current !== epoch) return;
+
+    setHiddenPinId(ADVENTURER_PIN_ID);
+    await sleep(30);
     setExitPinId(null);
     setExitMotion(null);
-    setEnterPinId(null);
-    setEnterMotion(null);
-    setHiddenPinId(ADVENTURER_PIN_ID);
+    await sleep(holdGoneMs);
+    if (allianceEpoch.current !== epoch) return;
+
+    // 3) Restore west placement while invisible
     const home = homeUnitedState();
     setUnitedState(home);
     saveUnitedState(worldId, home);
-    await sleep(40);
+    await sleep(60);
+
+    // 4) Camera back to west, then portal in
+    issueCamera({
+      type: "focus-pin",
+      pinId: ADVENTURER_PIN_ID,
+      scale: 2.75,
+      durationMs: panMs,
+    });
+    await sleep(panWaitMs);
+    if (allianceEpoch.current !== epoch) return;
+
+    setEnterPinId(ADVENTURER_PIN_ID);
+    setEnterMotion(motion);
     setHiddenPinId(null);
+    soundFx.playSelectSound();
+    await sleep(enterMs);
+    if (allianceEpoch.current !== epoch) return;
+
+    setEnterPinId(null);
+    setEnterMotion(null);
+
+    // Finish trail retreat / color morph if still running
+    const elapsed =
+      focusMs + exitMs + 30 + holdGoneMs + 60 + panWaitMs + enterMs;
+    const trailRemain = Math.max(0, retreatMs - elapsed);
+    if (trailRemain > 0) await sleep(trailRemain);
+    setShowTransferTrails(false);
+    setTrailsRetreating(false);
+
+    const colorRemain = Math.max(0, colorMs - (elapsed + trailRemain));
+    if (colorRemain > 0) await sleep(colorRemain);
+    if (allianceEpoch.current !== epoch) return;
+
+    setRealmColorPhase("idle");
     issueCamera({ type: "reset", durationMs: 500 });
     window.setTimeout(() => setCameraCommand(null), 520);
-    soundFx.playSelectSound();
+    setHireBusy(false);
   };
 
   const listPins = useMemo(() => {
@@ -542,7 +613,9 @@ export default function Home() {
             ? "realm-color-aligned"
             : realmColorPhase === "celebrate"
               ? "realm-color-celebrate"
-              : ""
+              : realmColorPhase === "reverting"
+                ? "realm-color-reverting"
+                : ""
       }`}
       aria-busy={hireBusy || undefined}
     >
@@ -721,6 +794,7 @@ export default function Home() {
             : realmColorPhase
         }
         showTransferTrails={showTransferTrails}
+        trailsRetreating={trailsRetreating}
         trailSpanMs={trailSpanMs}
       />
 

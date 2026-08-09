@@ -11,6 +11,8 @@ import {
 interface AllianceTransferTrailsProps {
   pins: LorePin[];
   active: boolean;
+  /** Play reverse draw (east → west) while keeping geometry. */
+  retreating?: boolean;
   /** Total ms from activate → last arc finish (calendar open). */
   spanMs?: number;
 }
@@ -249,11 +251,12 @@ function buildArcs(pins: LorePin[], spanMs: number): TransferArc[] {
 /**
  * Curved skill-transfer arcs from adventurer project/achievement pins
  * onto Guild Shore. Geometry freezes on activate; CSS stroke draw only
- * so the cinematic stays smooth under pan/zoom.
+ * so the cinematic stays smooth under pan/zoom. `retreating` reverses the draw.
  */
 export const AllianceTransferTrails: React.FC<AllianceTransferTrailsProps> = ({
   pins,
   active,
+  retreating = false,
   spanMs = 9000,
 }) => {
   const [arcs, setArcs] = useState<TransferArc[] | null>(null);
@@ -281,56 +284,65 @@ export const AllianceTransferTrails: React.FC<AllianceTransferTrailsProps> = ({
       aria-hidden
       style={{ contain: "strict" }}
     >
-      {arcs.map((arc) => (
-        <g key={arc.id}>
-          <circle
-            cx={arc.from.x}
-            cy={arc.from.y}
-            r={ORIGIN_RING_R}
-            fill="none"
-            stroke="#2dd4bf"
-            strokeWidth={ORIGIN_RING_STROKE}
-            className="alliance-transfer-origin-ring"
-            style={{ animationDelay: `${arc.delay}s` }}
-          />
-          <circle
-            cx={arc.from.x}
-            cy={arc.from.y}
-            r={0.28}
-            fill="#2dd4bf"
-            className="alliance-transfer-origin-core"
-            style={{ animationDelay: `${arc.delay}s` }}
-          />
+      {arcs.map((arc, index) => {
+        const retreatDelay = index * 0.05;
+        const retreatDuration = 0.85 + hash01(arc.id, 21) * 0.25;
+        const delay = retreating ? retreatDelay : arc.delay;
+        const duration = retreating ? retreatDuration : arc.duration;
+        const retreatClass = retreating ? "alliance-transfer-retreating" : "";
 
-          <path
-            d={arc.d}
-            fill="none"
-            stroke="#2dd4bf"
-            strokeWidth={TRAIL_STROKE}
-            strokeLinecap="butt"
-            strokeLinejoin="round"
-            strokeDasharray={1}
-            strokeDashoffset={1}
-            pathLength={1}
-            className="alliance-transfer-stroke"
-            style={{
-              animationDelay: `${arc.delay}s`,
-              animationDuration: `${arc.duration}s`,
-            }}
-          />
+        return (
+          <g key={`${arc.id}-${retreating ? "out" : "in"}`}>
+            <circle
+              cx={arc.from.x}
+              cy={arc.from.y}
+              r={ORIGIN_RING_R}
+              fill="none"
+              stroke="#2dd4bf"
+              strokeWidth={ORIGIN_RING_STROKE}
+              className={`alliance-transfer-origin-ring ${retreatClass}`}
+              style={{ animationDelay: `${delay}s` }}
+            />
+            <circle
+              cx={arc.from.x}
+              cy={arc.from.y}
+              r={0.28}
+              fill="#2dd4bf"
+              className={`alliance-transfer-origin-core ${retreatClass}`}
+              style={{ animationDelay: `${delay}s` }}
+            />
 
-          <g
-            transform={`translate(${arc.to.x} ${arc.to.y}) rotate(${arc.angle})`}
-            className="alliance-transfer-arrow"
-            style={{
-              animationDelay: `${arc.delay + arc.duration * 0.92}s`,
-            }}
-          >
-            {/* Short equilateral-ish head — wide base, modest length */}
-            <path d="M -0.95 -1.15 L 1.15 0 L -0.95 1.15 Z" fill="#2dd4bf" />
+            <path
+              d={arc.d}
+              fill="none"
+              stroke="#2dd4bf"
+              strokeWidth={TRAIL_STROKE}
+              strokeLinecap="butt"
+              strokeLinejoin="round"
+              strokeDasharray={1}
+              strokeDashoffset={retreating ? 0 : 1}
+              pathLength={1}
+              className={`alliance-transfer-stroke ${retreatClass}`}
+              style={{
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration}s`,
+              }}
+            />
+
+            <g
+              transform={`translate(${arc.to.x} ${arc.to.y}) rotate(${arc.angle})`}
+              className={`alliance-transfer-arrow ${retreatClass}`}
+              style={{
+                animationDelay: retreating
+                  ? `${delay}s`
+                  : `${arc.delay + arc.duration * 0.92}s`,
+              }}
+            >
+              <path d="M -0.95 -1.15 L 1.15 0 L -0.95 1.15 Z" fill="#2dd4bf" />
+            </g>
           </g>
-        </g>
-      ))}
+        );
+      })}
     </svg>
   );
 };

@@ -1115,12 +1115,41 @@ body {
   }
 }
 
+@keyframes alliance-transfer-retreat {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 1;
+  }
+}
+
 @keyframes alliance-transfer-arrow-in {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes alliance-transfer-arrow-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes alliance-transfer-origin-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.4);
   }
 }
 
@@ -1132,6 +1161,11 @@ body {
   animation: alliance-transfer-origin-in 0.28s ease-out forwards;
 }
 
+.alliance-transfer-origin-ring.alliance-transfer-retreating,
+.alliance-transfer-origin-core.alliance-transfer-retreating {
+  animation: alliance-transfer-origin-out 0.35s ease-in forwards;
+}
+
 .alliance-transfer-stroke {
   animation-name: alliance-transfer-draw;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -1139,9 +1173,20 @@ body {
   will-change: stroke-dashoffset;
 }
 
+.alliance-transfer-stroke.alliance-transfer-retreating {
+  stroke-dashoffset: 0;
+  animation-name: alliance-transfer-retreat;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+
 .alliance-transfer-arrow {
   opacity: 0;
   animation: alliance-transfer-arrow-in 0.16s ease-out forwards;
+}
+
+.alliance-transfer-arrow.alliance-transfer-retreating {
+  animation: alliance-transfer-arrow-out 0.2s ease-in forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1151,14 +1196,27 @@ body {
     opacity: 1;
   }
 
+  .alliance-transfer-origin-ring.alliance-transfer-retreating,
+  .alliance-transfer-origin-core.alliance-transfer-retreating {
+    opacity: 0;
+  }
+
   .alliance-transfer-stroke {
     animation: none;
     stroke-dashoffset: 0;
   }
 
+  .alliance-transfer-stroke.alliance-transfer-retreating {
+    stroke-dashoffset: 1;
+  }
+
   .alliance-transfer-arrow {
     animation: none;
     opacity: 1;
+  }
+
+  .alliance-transfer-arrow.alliance-transfer-retreating {
+    opacity: 0;
   }
 }
 

@@ -88,6 +88,8 @@ interface MapCanvasProps {
   realmColorPhase?: RealmColorPhase;
   /** Curved skill-transfer arcs west → east. */
   showTransferTrails?: boolean;
+  /** Reverse the transfer arcs (unforge). */
+  trailsRetreating?: boolean;
   /** Ms from trail activate → last arc finish (calendar open). */
   trailSpanMs?: number;
   /** Revealed easter-egg pin ids — others render as faint hotspots. */
@@ -438,6 +440,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
   cameraCommand = null,
   realmColorPhase = "idle",
   showTransferTrails = false,
+  trailsRetreating = false,
   trailSpanMs = 9000,
   revealedSecretIds,
   exploredPinIds,
@@ -575,6 +578,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                 <AllianceTransferTrails
                   pins={data.pins}
                   active={showTransferTrails}
+                  retreating={trailsRetreating}
                   spanMs={trailSpanMs}
                 />
 
