@@ -534,7 +534,15 @@ export default function Home() {
   return (
     <main
       className={`realm-atmosphere relative h-dvh w-full overflow-hidden ${
-        unitedState.united ? "realm-united" : ""
+        unitedState.united || allianceForged ? "realm-united" : ""
+      } ${
+        realmColorPhase === "aligning"
+          ? "realm-color-aligning"
+          : realmColorPhase === "aligned"
+            ? "realm-color-aligned"
+            : realmColorPhase === "celebrate"
+              ? "realm-color-celebrate"
+              : ""
       }`}
       aria-busy={hireBusy || undefined}
     >
@@ -629,7 +637,7 @@ export default function Home() {
         <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
           <span
             className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse ${
-              allianceForged ? "bg-teal-300" : "bg-amber-300"
+              allianceForged ? "bg-teal-300" : "bg-violet-300"
             }`}
           />
           <span className="font-semibold tracking-wide text-realm-silver">
@@ -706,6 +714,7 @@ export default function Home() {
         hiddenPinId={hiddenPinId}
         cameraCommand={cameraCommand}
         revealedSecretIds={revealedSecrets}
+        exploredPinIds={exploredIds}
         realmColorPhase={
           allianceForged && realmColorPhase === "idle"
             ? "aligned"

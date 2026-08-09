@@ -92,6 +92,8 @@ interface MapCanvasProps {
   trailSpanMs?: number;
   /** Revealed easter-egg pin ids — others render as faint hotspots. */
   revealedSecretIds?: Set<string>;
+  /** Pins already opened — soft glow marks exploration. */
+  exploredPinIds?: Set<string>;
 }
 
 const CanvasControls = () => {
@@ -260,9 +262,9 @@ function mapMarkerTone(opts: {
       };
     }
     return {
-      fill: "#8b6ee6",
+      fill: "var(--pin-west-fill)",
       stroke: "rgba(255,255,255,0.7)",
-      aperture: "rgba(245, 243, 255, 0.94)",
+      aperture: "var(--pin-west-selected-aperture)",
       contentClass: "text-slate-900",
       iconClass: "h-4 w-4",
     };
@@ -276,20 +278,12 @@ function mapMarkerTone(opts: {
       iconClass: "h-4 w-4",
     };
   }
-  if (opts.isSecret) {
-    return {
-      fill: "rgba(42, 36, 58, 0.92)",
-      stroke: "rgba(196, 181, 253, 0.5)",
-      aperture: "rgba(12, 20, 24, 0.7)",
-      contentClass: "text-violet-100",
-      iconClass: "h-4 w-4",
-    };
-  }
+  // West / secret — body + stroke + icon follow alliance accent tokens.
   return {
-    fill: "rgba(42, 36, 58, 0.92)",
-    stroke: "rgba(167, 139, 250, 0.4)",
-    aperture: "rgba(12, 20, 24, 0.7)",
-    contentClass: "text-violet-100/90",
+    fill: "var(--pin-west-body)",
+    stroke: "color-mix(in srgb, var(--pin-west-stroke) 55%, transparent)",
+    aperture: "var(--pin-west-aperture)",
+    contentClass: "map-pin-west-icon",
     iconClass: "h-4 w-4",
   };
 }
@@ -298,6 +292,8 @@ function MapMarkerPin({
   tone,
   veiled,
   unitedRing,
+  explored,
+  exploredTone,
   contentMotionClass,
   shellMotionClass,
   children,
@@ -305,6 +301,9 @@ function MapMarkerPin({
   tone: MapMarkerTone;
   veiled?: boolean;
   unitedRing?: boolean;
+  /** Soft colored edge glow once the pin has been opened. */
+  explored?: boolean;
+  exploredTone?: "west" | "east";
   /** Applied to avatar/icon only (portal spin). */
   contentMotionClass?: string;
   /** Fade/scale on the pin shell without rotating it. */
@@ -315,9 +314,16 @@ function MapMarkerPin({
   const h = veiled ? 28 : 54;
   const holeR = veiled ? 5.2 : 10.5;
 
+  const exploredClass =
+    explored && !veiled
+      ? exploredTone === "east"
+        ? "map-pin-explored-east"
+        : "map-pin-explored-west"
+      : "";
+
   return (
     <div
-      className={`relative ${unitedRing ? "drop-shadow-[0_0_6px_rgba(94,234,212,0.45)]" : "drop-shadow-md"} ${shellMotionClass ?? ""}`}
+      className={`relative ${unitedRing ? "drop-shadow-[0_0_6px_rgba(94,234,212,0.45)]" : exploredClass ? exploredClass : "drop-shadow-md"} ${shellMotionClass ?? ""}`}
       style={{ width: w, height: h }}
     >
       <svg
@@ -332,6 +338,7 @@ function MapMarkerPin({
           strokeWidth={1.25}
           strokeLinejoin="round"
           strokeLinecap="round"
+          className="map-pin-accent"
         />
         <circle
           cx="20"
@@ -341,6 +348,7 @@ function MapMarkerPin({
           stroke={tone.stroke}
           strokeWidth={0.85}
           strokeOpacity={0.5}
+          className="map-pin-accent"
         />
       </svg>
 
@@ -432,6 +440,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
   showTransferTrails = false,
   trailSpanMs = 9000,
   revealedSecretIds,
+  exploredPinIds,
 }) => {
   const [hoverTip, setHoverTip] = useState<{
     id: string;
@@ -633,6 +642,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                       !isSecret ||
                       (revealedSecretIds?.has(pin.id) ?? false);
                     const isVeiledSecret = isSecret && !secretRevealed;
+                    const isExplored =
+                      !isVeiledSecret &&
+                      (exploredPinIds?.has(pin.id) ?? false);
                     const tone = mapMarkerTone({
                       isCompany,
                       isSelected,
@@ -715,25 +727,36 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                           }
                         >
                         <div
-                          className={`pointer-events-none absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity duration-300 ${
+                          className={`pointer-events-none absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[opacity,background-color] duration-[var(--alliance-accent-duration)] ease-in-out ${
                             isVeiledSecret ? "h-7 w-7" : "h-14 w-14"
                           } ${
                             isSelected
                               ? isCompany
                                 ? "bg-teal-400/70 opacity-80 blur-md animate-pulse"
-                                : "bg-violet-400/55 opacity-80 blur-md animate-pulse"
+                                : "opacity-80 blur-md animate-pulse"
                               : isVeiledSecret
                                 ? "bg-teal-300/20 opacity-60 blur-sm animate-pulse"
                                 : isCompany
                                   ? "bg-teal-400/30 opacity-0 group-hover:opacity-100 blur-md"
-                                  : "bg-violet-300/25 opacity-0 group-hover:opacity-100 blur-md"
+                                  : "opacity-0 group-hover:opacity-100 blur-md"
                           }`}
+                          style={
+                            !isCompany && !isVeiledSecret
+                              ? {
+                                  backgroundColor: isSelected
+                                    ? "color-mix(in srgb, var(--pin-west-glow) 55%, transparent)"
+                                    : "color-mix(in srgb, var(--pin-west-glow) 28%, transparent)",
+                                }
+                              : undefined
+                          }
                         />
 
                         <MapMarkerPin
                           tone={tone}
                           veiled={isVeiledSecret}
                           unitedRing={united && isCompany && !isVeiledSecret}
+                          explored={isExplored}
+                          exploredTone={isCompany ? "east" : "west"}
                           contentMotionClass={contentMotionClass || undefined}
                           shellMotionClass={shellMotionClass || undefined}
                         >
@@ -761,8 +784,18 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                               : "bottom-full mb-2"
                           }`}
                         >
-                          <div className="glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl">
-                            <p className="text-[9px] uppercase tracking-[0.12em] text-realm-teal-soft">
+                          <div
+                            className={`glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl ${
+                              isCompany ? "" : "glass-west"
+                            }`}
+                          >
+                            <p
+                              className={`text-[9px] uppercase tracking-[0.12em] ${
+                                isCompany
+                                  ? "text-realm-teal-soft"
+                                  : "pin-tooltip-meta"
+                              }`}
+                            >
                               {pin.category}
                               {" · "}
                               {pin.realm === "company"

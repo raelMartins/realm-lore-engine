@@ -40,6 +40,7 @@ export const RealmOverview: React.FC<RealmOverviewProps> = ({
     realm === "adventurer"
       ? "Western isles — craft, shipped relics, and the adventurer's path."
       : `Eastern shore — ${data.companyName}, allies, and the main quest.`;
+  const isWest = realm === "adventurer";
 
   return (
     <AnimatePresence>
@@ -63,13 +64,15 @@ export const RealmOverview: React.FC<RealmOverviewProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.97 }}
             transition={{ type: "spring", damping: 26, stiffness: 320 }}
-            className="glass-panel-strong fixed top-1/2 left-1/2 z-50 flex max-h-[min(85dvh,72vh,520px)] w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem]"
+            className={`glass-panel-strong fixed top-1/2 left-1/2 z-50 flex max-h-[min(85dvh,72vh,520px)] w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[1.35rem] ${
+              isWest ? "realm-overview-west" : "realm-overview-east"
+            }`}
           >
             <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 pb-3.5 pt-5">
               <div className="min-w-0">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-realm-teal-soft">
+                <span className="realm-overview-badge inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
                   <Compass className="h-3 w-3" />
-                  {realm === "adventurer" ? "West" : "East"}
+                  {isWest ? "West" : "East"}
                 </span>
                 <h2
                   id="realm-overview-title"
@@ -105,9 +108,9 @@ export const RealmOverview: React.FC<RealmOverviewProps> = ({
                       onSelectPin(pin);
                       onClose();
                     }}
-                    className="group flex w-full items-start gap-3 rounded-2xl border border-transparent px-2.5 py-2.5 text-left transition-all hover:border-realm-teal/25 hover:bg-white/5"
+                    className="realm-overview-row group flex w-full items-start gap-3 rounded-2xl border border-transparent px-2.5 py-2.5 text-left transition-all hover:bg-white/5"
                   >
-                    <div className="glass-btn rounded-xl p-2 text-realm-teal">
+                    <div className="realm-overview-icon glass-btn rounded-xl p-2">
                       <MapPin className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0">
