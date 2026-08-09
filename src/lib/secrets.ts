@@ -45,6 +45,15 @@ export function saveRevealedSecrets(worldId: string, ids: Set<string>): void {
   }
 }
 
+export function clearRevealedSecrets(worldId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(secretsStorageKey(worldId));
+  } catch {
+    /* best-effort */
+  }
+}
+
 export function revealSecret(
   worldId: string,
   pinId: string,

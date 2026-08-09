@@ -44,6 +44,7 @@ import {
   filterVisiblePins,
   loadRevealedSecrets,
   revealSecret,
+  clearRevealedSecrets,
   isSecretPin,
 } from "@/lib/secrets";
 import type { RealmColorPhase } from "@/components/RealmHitLayer";
@@ -86,6 +87,7 @@ export default function Home() {
   const [realmColorPhase, setRealmColorPhase] =
     useState<RealmColorPhase>("idle");
   const [showTransferTrails, setShowTransferTrails] = useState(false);
+  const [trailSpanMs, setTrailSpanMs] = useState(9000);
   const [confettiOn, setConfettiOn] = useState(false);
   const [confettiHeavy, setConfettiHeavy] = useState(false);
   const [cameraCommand, setCameraCommand] = useState<CameraCommand | null>(
@@ -241,17 +243,31 @@ export default function Home() {
 
     const celebrateMs = reduced ? 200 : 900;
     const alignMs = reduced ? 200 : 2800;
-    const trailsMs = reduced ? 200 : 2200;
+    const postBannerMs = reduced ? 120 : 400;
     const focusMs = reduced ? 200 : 750;
     const exitMs = reduced ? 80 : 1100;
     const holdGoneMs = reduced ? 120 : 380;
     const panMs = reduced ? 320 : 1000;
     const panWaitMs = reduced ? 360 : 1150;
     const enterMs = reduced ? 120 : 950;
+    const preCalendarMs = schedulingUrl ? (reduced ? 200 : 2000) : 0;
+    // Arcs run from forge (align) through to calendar open — not gated on banner.
+    const trailSpanMs =
+      alignMs +
+      postBannerMs +
+      focusMs +
+      exitMs +
+      30 +
+      holdGoneMs +
+      60 +
+      panWaitMs +
+      enterMs +
+      preCalendarMs;
 
     // 0) Confetti + parchment congrats; both isles lit as if hovered
     setUnitedState(homeUnitedState());
     setShowTransferTrails(false);
+    setTrailSpanMs(trailSpanMs);
     setConfettiHeavy(true);
     setConfettiOn(true);
     setCongratsOpen(true);
@@ -259,24 +275,20 @@ export default function Home() {
     soundFx.playSelectSound();
     await sleep(celebrateMs);
 
-    // 1) Adventurer isle slowly takes on guild colors (banner still up)
+    // 1) Forge begins — color align + skill arcs start (banner still up)
     setRealmColorPhase("aligning");
+    setShowTransferTrails(true);
     await sleep(alignMs);
 
-    // 2) Banner clears; colors stay aligned
+    // 2) Banner clears; colors stay aligned (arcs keep drawing)
     setCongratsOpen(false);
     setRealmColorPhase("aligned");
     setAllianceForged(true);
     setConfettiOn(false);
     setConfettiHeavy(false);
-    await sleep(reduced ? 120 : 400);
+    await sleep(postBannerMs);
 
-    // 3) Skill arcs draw west → east and stay until unforge
-    setShowTransferTrails(true);
-    await sleep(trailsMs);
-    await sleep(reduced ? 80 : 250);
-
-    // 4) Center on west pin, then portal out
+    // 3) Center on west pin, then portal out
     issueCamera({
       type: "focus-pin",
       pinId: ADVENTURER_PIN_ID,
@@ -382,24 +394,29 @@ export default function Home() {
     return filterVisiblePins(displayData.pins, revealedSecrets);
   }, [displayData, revealedSecrets]);
 
-  const unlockEasterEgg = (source: "konami" | "map") => {
+  const unlockEasterEgg = (
+    source: "konami" | "map",
+    pinId: string = EASTER_EGG_PIN_ID,
+  ) => {
     if (!displayData) return;
-    const pin = displayData.pins.find((p) => p.id === EASTER_EGG_PIN_ID);
+    const pin = displayData.pins.find(
+      (p) => p.id === pinId && isSecretPin(p),
+    );
     if (!pin) return;
 
-    const already = revealedSecrets.has(EASTER_EGG_PIN_ID);
-    setRevealedSecrets((prev) =>
-      revealSecret(worldId, EASTER_EGG_PIN_ID, prev),
-    );
+    const already = revealedSecrets.has(pin.id);
+    setRevealedSecrets((prev) => revealSecret(worldId, pin.id, prev));
 
     if (!already) {
       setSecretToast(
         source === "konami"
           ? "Konami accepted — a secret node shimmers into view."
-          : "You noticed a faint glimmer on the northern ridge.",
+          : pin.coordinates.y < 40
+            ? "You noticed a faint glimmer on the northern ridge."
+            : "A quiet shimmer answers from the southern shore.",
       );
       window.setTimeout(() => setSecretToast(null), 3200);
-      setSpawnPinId(EASTER_EGG_PIN_ID);
+      setSpawnPinId(pin.id);
       window.setTimeout(() => setSpawnPinId(null), 900);
       setConfettiOn(true);
       window.setTimeout(() => setConfettiOn(false), 2200);
@@ -407,7 +424,7 @@ export default function Home() {
 
     issueCamera({
       type: "focus-pin",
-      pinId: EASTER_EGG_PIN_ID,
+      pinId: pin.id,
       scale: 2.5,
       durationMs: 520,
     });
@@ -418,12 +435,15 @@ export default function Home() {
     setSelectedPin(pin);
   };
 
-  useKonami(() => unlockEasterEgg("konami"), Boolean(displayData) && !hireBusy);
+  useKonami(
+    () => unlockEasterEgg("konami", EASTER_EGG_PIN_ID),
+    Boolean(displayData) && !hireBusy,
+  );
 
   const handleSelectPin = (pin: LorePin) => {
     if (placing || hireBusy) return;
     if (isSecretPin(pin) && !revealedSecrets.has(pin.id)) {
-      unlockEasterEgg("map");
+      unlockEasterEgg("map", pin.id);
       return;
     }
     soundFx.playSelectSound();
@@ -656,7 +676,12 @@ export default function Home() {
           total={exploration.total}
           onClear={() => {
             clearExploredPinIds(worldId);
+            clearRevealedSecrets(worldId);
             setExploredIds(new Set());
+            setRevealedSecrets(new Set());
+            setSelectedPin((prev) =>
+              prev && isSecretPin(prev) ? null : prev,
+            );
             soundFx.playSelectSound();
           }}
         />
@@ -687,6 +712,7 @@ export default function Home() {
             : realmColorPhase
         }
         showTransferTrails={showTransferTrails}
+        trailSpanMs={trailSpanMs}
       />
 
       <GuildChartControls
