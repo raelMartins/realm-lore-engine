@@ -7,6 +7,7 @@ import { Search, MapPin, X, CornerDownLeft } from "lucide-react";
 interface CommandPaletteProps {
   pins: LorePin[];
   onSelectPin: (pin: LorePin) => void;
+  onOpen?: () => void;
   realmLabels?: {
     adventurer?: string;
     company?: string;
@@ -21,6 +22,7 @@ const DEFAULT_LABELS: Record<RealmSide, string> = {
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   pins,
   onSelectPin,
+  onOpen,
   realmLabels,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +32,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsOpen((prev) => !prev);
+        setIsOpen((prev) => {
+          const next = !prev;
+          if (next) onOpen?.();
+          return next;
+        });
       }
       if (e.key === "Escape") {
         setIsOpen(false);
@@ -39,7 +45,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [onOpen]);
 
   const close = () => {
     setIsOpen(false);
@@ -69,7 +75,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return (
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          onOpen?.();
+          setIsOpen(true);
+        }}
         className="glass-panel flex items-center gap-3 rounded-full px-4 py-2.5 text-xs text-realm-silver-muted transition-all hover:border-realm-teal/40 hover:text-realm-silver group"
       >
         <Search className="h-4 w-4 text-realm-teal" />

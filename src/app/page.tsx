@@ -49,6 +49,11 @@ import {
 } from "@/lib/secrets";
 import type { RealmColorPhase } from "@/components/RealmHitLayer";
 import {
+  startTracking,
+  track,
+  TRACK_EVENTS,
+} from "@/lib/clientTrack";
+import {
   Volume2,
   VolumeX,
   Music2,
@@ -120,6 +125,10 @@ export default function Home() {
 
   useEffect(() => {
     void musicFx.start();
+  }, []);
+
+  useEffect(() => {
+    startTracking();
   }, []);
 
   /** Hard interaction lock for the full alliance cinematic. */
@@ -287,6 +296,7 @@ export default function Home() {
     setAllianceForged(true);
     setConfettiOn(false);
     setConfettiHeavy(false);
+    track(TRACK_EVENTS.allianceForge);
     await sleep(postBannerMs);
 
     // 3) Center on west pin, then portal out
@@ -348,6 +358,7 @@ export default function Home() {
       await sleep(2000);
       if (allianceEpoch.current === epoch) {
         setCalendarOpen(true);
+        track(TRACK_EVENTS.calendarOpen, { source: "alliance_cinematic" });
       }
     }
     // Unlock only once the calendar is ready to appear (or skipped).
@@ -359,7 +370,10 @@ export default function Home() {
   const handleHire = () => {
     if (hireBusy) return;
     if (allianceForged) {
-      if (schedulingUrl) setCalendarOpen(true);
+      if (schedulingUrl) {
+        setCalendarOpen(true);
+        track(TRACK_EVENTS.calendarOpen, { source: "forge_button" });
+      }
       return;
     }
     void runPortalCinematic();
@@ -367,6 +381,7 @@ export default function Home() {
 
   const unforgeAlliance = async () => {
     if (hireBusy || !allianceForged) return;
+    track(TRACK_EVENTS.allianceUnforge);
     const motion: HireMotion = "portal";
     const epoch = ++allianceEpoch.current;
 
@@ -479,6 +494,11 @@ export default function Home() {
     setRevealedSecrets((prev) => revealSecret(worldId, pin.id, prev));
 
     if (!already) {
+      track(TRACK_EVENTS.easterEggReveal, {
+        pinId: pin.id,
+        pinTitle: pin.title,
+        source,
+      });
       setSecretToast(
         source === "konami"
           ? "Konami accepted: a secret node shimmers into view."
@@ -521,6 +541,11 @@ export default function Home() {
     setSelectedRealm(null);
     setSelectedPin(pin);
     setExploredIds((prev) => markPinExplored(worldId, pin, prev));
+    track(TRACK_EVENTS.pinOpen, {
+      pinId: pin.id,
+      pinTitle: pin.title,
+      realm: pin.realm,
+    });
   };
 
   const handleSelectRealm = (realm: RealmSide) => {
@@ -528,6 +553,7 @@ export default function Home() {
     soundFx.playHoverSound();
     setSelectedPin(null);
     setSelectedRealm(realm);
+    track(TRACK_EVENTS.realmOpen, { realm });
   };
 
   const handleToggleMute = () => {
@@ -652,6 +678,7 @@ export default function Home() {
           <CommandPalette
             pins={listPins}
             onSelectPin={handleSelectPin}
+            onOpen={() => track(TRACK_EVENTS.searchOpen)}
             realmLabels={displayData.realmLabels}
           />
         </div>
@@ -677,7 +704,10 @@ export default function Home() {
               {schedulingUrl ? (
                 <button
                   type="button"
-                  onClick={() => setCalendarOpen(true)}
+                  onClick={() => {
+                    setCalendarOpen(true);
+                    track(TRACK_EVENTS.calendarOpen, { source: "hud" });
+                  }}
                   disabled={hireBusy}
                   className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
                   title="Chart a meeting"
@@ -833,7 +863,10 @@ export default function Home() {
         pins={listPins}
         onClose={() => setSelectedPin(null)}
         onHire={handleHire}
-        onOpenCalendar={() => setCalendarOpen(true)}
+        onOpenCalendar={() => {
+          setCalendarOpen(true);
+          track(TRACK_EVENTS.calendarOpen, { source: "lore_drawer" });
+        }}
       />
 
       <CalendarModal

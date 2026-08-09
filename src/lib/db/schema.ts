@@ -37,17 +37,57 @@ const MIGRATIONS = [
   `
   CREATE INDEX IF NOT EXISTS idx_pins_world_id ON pins(world_id)
   `,
+  `
+  CREATE TABLE IF NOT EXISTS visits (
+    id TEXT PRIMARY KEY,
+    world_id TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    last_seen_at TEXT NOT NULL,
+    ip TEXT,
+    country TEXT,
+    region TEXT,
+    city TEXT,
+    user_agent TEXT,
+    is_self INTEGER NOT NULL DEFAULT 0
+  )
+  `,
+  `
+  CREATE INDEX IF NOT EXISTS idx_visits_world_started
+    ON visits(world_id, started_at DESC)
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS visit_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    visit_id TEXT NOT NULL,
+    world_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    payload_json TEXT,
+    client_ts TEXT,
+    received_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (visit_id) REFERENCES visits(id) ON DELETE CASCADE
+  )
+  `,
+  `
+  CREATE INDEX IF NOT EXISTS idx_visit_events_visit
+    ON visit_events(visit_id, received_at)
+  `,
+  `
+  CREATE INDEX IF NOT EXISTS idx_visit_events_world
+    ON visit_events(world_id, received_at DESC)
+  `,
 ];
 
-let schemaReady = false;
+/** Bump when adding migrations so hot servers re-apply CREATE IF NOT EXISTS. */
+const SCHEMA_VERSION = 2;
+let appliedVersion = 0;
 
 /** Idempotent schema ensure — safe to call on every request. */
 export async function ensureSchema(db: Client): Promise<void> {
-  if (schemaReady) return;
+  if (appliedVersion >= SCHEMA_VERSION) return;
 
   for (const sql of MIGRATIONS) {
     await db.execute(sql);
   }
 
-  schemaReady = true;
+  appliedVersion = SCHEMA_VERSION;
 }
