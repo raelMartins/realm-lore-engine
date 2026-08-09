@@ -10,7 +10,11 @@ import { CompanyLoreConfig, LorePin } from "@/types/world";
 import * as Icons from "lucide-react";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { soundFx } from "@/lib/audio";
-import { RealmHitLayer, type RealmColorPhase } from "@/components/RealmHitLayer";
+import {
+  RealmHitLayer,
+  RealmLabelOverlay,
+  type RealmColorPhase,
+} from "@/components/RealmHitLayer";
 import { AllianceTransferTrails } from "@/components/hire/AllianceTransferTrails";
 import {
   MAP_STAGE_SIZE_STYLE,
@@ -433,6 +437,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
     id: string;
     below: boolean;
   } | null>(null);
+  const [hoveredRealm, setHoveredRealm] = useState<RealmSide | null>(null);
   const [scales, setScales] = useState({ initial: 1, min: 1 });
 
   useEffect(() => {
@@ -492,7 +497,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
               cinematicLock={hireBusy}
             />
             <TransformComponent
-              wrapperClass="!flex !h-full !w-full !items-center !justify-center"
+              wrapperClass={`!flex !h-full !w-full !items-center !justify-center ${
+                placementMode
+                  ? "cursor-crosshair"
+                  : hireBusy
+                    ? "cursor-default"
+                    : "cursor-grab active:cursor-grabbing"
+              }`}
               contentClass="!w-auto !h-auto"
             >
               {/*
@@ -501,7 +512,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
               */}
               <div
                 className={`relative overflow-hidden bg-[#1a1410] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] ${
-                  placementMode ? "cursor-crosshair" : ""
+                  placementMode
+                    ? "cursor-crosshair"
+                    : hireBusy
+                      ? "cursor-default"
+                      : "cursor-grab active:cursor-grabbing"
                 }`}
                 style={MAP_STAGE_SIZE_STYLE}
                 data-map-stage
@@ -544,6 +559,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                     selectedRealm={selectedRealm}
                     onSelectRealm={onSelectRealm}
                     colorPhase={realmColorPhase}
+                    onHoverChange={setHoveredRealm}
                   />
                 </div>
 
@@ -768,6 +784,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                     );
                   })}
                 </div>
+
+                <RealmLabelOverlay
+                  labels={data.realmLabels}
+                  selectedRealm={selectedRealm}
+                  hoveredRealm={hoveredRealm}
+                  colorPhase={realmColorPhase}
+                />
 
                 {SHOW_MAP_CALIBRATION && <CalibrationMarker />}
               </div>

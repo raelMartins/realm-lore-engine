@@ -15,6 +15,18 @@ interface RealmHitLayerProps {
   onSelectRealm: (realm: RealmSide) => void;
   /** Alliance cinematic / lasting color alignment. */
   colorPhase?: RealmColorPhase;
+  /** Notify parent so labels can lift above pins while hovered. */
+  onHoverChange?: (realm: RealmSide | null) => void;
+}
+
+interface RealmLabelOverlayProps {
+  labels?: {
+    adventurer?: string;
+    company?: string;
+  };
+  selectedRealm: RealmSide | null;
+  hoveredRealm: RealmSide | null;
+  colorPhase?: RealmColorPhase;
 }
 
 /** Adventurer = amber · Guild = teal (swapped from earlier teal-west / amber-east). */
@@ -55,16 +67,29 @@ function paletteFor(
   return REALM_FILL[realm];
 }
 
+function realmLabel(
+  realm: RealmSide,
+  labels?: RealmHitLayerProps["labels"],
+): string {
+  return labels?.[realm] || DEFAULT_NAMES[realm];
+}
+
 export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
   labels,
   selectedRealm,
   onSelectRealm,
   colorPhase = "idle",
+  onHoverChange,
 }) => {
   const [hovered, setHovered] = useState<RealmSide | null>(null);
   const pointerDown = useRef<{ x: number; y: number } | null>(null);
   const forceHover = colorPhase === "celebrate" || colorPhase === "aligning";
   const slowAlign = colorPhase === "aligning";
+
+  const setHover = (realm: RealmSide | null) => {
+    setHovered(realm);
+    onHoverChange?.(realm);
+  };
 
   return (
     <svg
@@ -87,8 +112,6 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
         const fill = paletteFor(realm, colorPhase);
         const active =
           forceHover || hovered === realm || selectedRealm === realm;
-        const label = labels?.[realm] || DEFAULT_NAMES[realm];
-        const anchor = REALM_HIT_LABELS[realm];
         const fillColor = forceHover
           ? fill.hover
           : selectedRealm === realm
@@ -98,56 +121,107 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
               : fill.idle;
 
         return (
-          <g key={realm}>
-            <path
-              d={REALM_HIT_PATHS[realm]}
-              data-realm-hit={realm}
-              fill={fillColor}
-              stroke={active ? fill.stroke : fill.strokeIdle}
-              strokeWidth={active ? 2.5 : 1.5}
-              vectorEffect="non-scaling-stroke"
-              filter={active ? "url(#realm-hover-glow)" : undefined}
-              className={`cursor-grab active:cursor-grabbing ${
-                slowAlign && realm === "adventurer"
-                  ? "transition-[fill,stroke,stroke-width,filter] duration-[2800ms] ease-in-out"
-                  : "transition-[fill,stroke,stroke-width] duration-200"
-              }`}
-              onMouseEnter={() => setHovered(realm)}
-              onMouseLeave={() => setHovered(null)}
-              onPointerDown={(e) => {
-                pointerDown.current = { x: e.clientX, y: e.clientY };
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                const start = pointerDown.current;
-                pointerDown.current = null;
-                if (start) {
-                  const moved = Math.hypot(
-                    e.clientX - start.x,
-                    e.clientY - start.y,
-                  );
-                  if (moved > CLICK_MOVE_THRESHOLD_PX) return;
-                }
-                onSelectRealm(realm);
-              }}
-            />
-            <text
-              x={anchor.x}
-              y={anchor.y}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="pointer-events-none select-none"
-              fill={active ? "#f8fafc" : "rgba(226, 232, 240, 0.7)"}
-              fontSize={1.55}
-              fontFamily="var(--font-cinzel), serif"
-              letterSpacing="0.05"
-              style={{
-                textShadow: "0 1px 3px rgba(0,0,0,0.75)",
-              }}
-            >
-              {label}
-            </text>
-          </g>
+          <path
+            key={realm}
+            d={REALM_HIT_PATHS[realm]}
+            data-realm-hit={realm}
+            fill={fillColor}
+            stroke={active ? fill.stroke : fill.strokeIdle}
+            strokeWidth={active ? 2.5 : 1.5}
+            vectorEffect="non-scaling-stroke"
+            filter={active ? "url(#realm-hover-glow)" : undefined}
+            className={`cursor-pointer active:cursor-grabbing ${
+              slowAlign && realm === "adventurer"
+                ? "transition-[fill,stroke,stroke-width,filter] duration-[2800ms] ease-in-out"
+                : "transition-[fill,stroke,stroke-width] duration-200"
+            }`}
+            onMouseEnter={() => setHover(realm)}
+            onMouseLeave={() => setHover(null)}
+            onPointerDown={(e) => {
+              pointerDown.current = { x: e.clientX, y: e.clientY };
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const start = pointerDown.current;
+              pointerDown.current = null;
+              if (start) {
+                const moved = Math.hypot(
+                  e.clientX - start.x,
+                  e.clientY - start.y,
+                );
+                if (moved > CLICK_MOVE_THRESHOLD_PX) return;
+              }
+              onSelectRealm(realm);
+            }}
+          />
+        );
+      })}
+
+      {/* Idle labels stay under pins; elevated copy renders in RealmLabelOverlay */}
+      {(["adventurer", "company"] as RealmSide[]).map((realm) => {
+        const elevated =
+          forceHover || hovered === realm || selectedRealm === realm;
+        if (elevated) return null;
+        const anchor = REALM_HIT_LABELS[realm];
+        return (
+          <text
+            key={`idle-${realm}`}
+            x={anchor.x}
+            y={anchor.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="pointer-events-none select-none"
+            fill="rgba(226, 232, 240, 0.7)"
+            fontSize={1.55}
+            fontFamily="var(--font-cinzel), serif"
+            letterSpacing="0.05"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.75)" }}
+          >
+            {realmLabel(realm, labels)}
+          </text>
+        );
+      })}
+    </svg>
+  );
+};
+
+/** Island names drawn above pins while hovered / selected / celebrating. */
+export const RealmLabelOverlay: React.FC<RealmLabelOverlayProps> = ({
+  labels,
+  selectedRealm,
+  hoveredRealm,
+  colorPhase = "idle",
+}) => {
+  const forceHover = colorPhase === "celebrate" || colorPhase === "aligning";
+
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 z-[3] h-full w-full overflow-visible"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      {(["adventurer", "company"] as RealmSide[]).map((realm) => {
+        const active =
+          forceHover || hoveredRealm === realm || selectedRealm === realm;
+        if (!active) return null;
+        const anchor = REALM_HIT_LABELS[realm];
+        return (
+          <text
+            key={realm}
+            x={anchor.x}
+            y={anchor.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="select-none"
+            fill="#f8fafc"
+            fontSize={1.55}
+            fontFamily="var(--font-cinzel), serif"
+            letterSpacing="0.05"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.75)" }}
+          >
+            {realmLabel(realm, labels)}
+          </text>
         );
       })}
     </svg>
