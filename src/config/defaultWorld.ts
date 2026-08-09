@@ -9,7 +9,7 @@ export const defaultWorldData: CompanyLoreConfig = {
   companyName: "Realm Quest",
   tagline: "An Interactive Spatial Portfolio & World Engine",
   customPitchMessage:
-    "Welcome traveler. Explore the western isles to learn my craft — then cross the channel to see why I would join your guild.",
+    "Welcome traveler. Explore the western isles to learn my craft, then cross the channel to see why I would join your guild.",
   realmLabels: {
     adventurer: "Adventurer's Reach",
     company: "Guild Shore",
@@ -40,7 +40,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Character",
         description:
-          "Cartographer of digital interfaces. I forge React, Next.js, and Express architectures into spatial canvases — at home in the frontend mists and the deeper backend vaults.",
+          "Cartographer of digital interfaces. I forge React, Next.js, and Express architectures into spatial canvases, at home in the frontend mists and the deeper backend vaults.",
         stats: [
           { label: "Frontend Architecture", value: 98 },
           { label: "Backend Forging", value: 90 },
@@ -65,7 +65,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Job",
         description:
-          "Leading a migration from legacy shores into a modern fortress — localized payment gates and a merchant discovery atlas for wayfarers.",
+          "Leading a migration from legacy shores into a modern fortress: localized payment gates and a merchant discovery atlas for wayfarers.",
         startDate: "2026-01-01",
         tasks: [
           "Architected a full-stack migration onto React, Next.js, TypeScript, and Express.",
@@ -85,7 +85,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Job",
         description:
-          "Governed the frontend of multi-tenant estates — capital transfers at scale and interactive spatial allocation systems.",
+          "Governed the frontend of multi-tenant estates: capital transfers at scale and interactive spatial allocation systems.",
         startDate: "2024-01-01",
         endDate: "2026-05-31",
         tasks: [
@@ -106,7 +106,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Job",
         description:
-          "Laid the foundation of a social amphitheater for scholars and sports fans — real-time missives and dynamic scrolls.",
+          "Laid the foundation of a social amphitheater for scholars and sports fans: real-time missives and dynamic scrolls.",
         startDate: "2021-12-01",
         endDate: "2024-04-30",
         tasks: [
@@ -166,7 +166,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Job",
         description:
-          "Channeled the work into digital form — the bridge between the senior builder and the patrons who needed a living site.",
+          "Channeled the work into digital form, the bridge between the senior builder and the patrons who needed a living site.",
         startDate: "2020-09-01",
         endDate: "2020-12-31",
         tasks: [
@@ -249,7 +249,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Project",
         description:
-          "A digital recreation of a classic tavern game from early in the journey — proof that with the right craft, anything can be built from raw code.",
+          "A digital recreation of a classic tavern game from early in the journey: proof that with the right craft, anything can be built from raw code.",
         tags: ["JavaScript", "React", "Webpack"],
         externalLink: {
           label: "Play a Match",
@@ -287,7 +287,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Project",
         description:
-          "A modular array of architectural skins — Terracotta, Mountain Lodge, Nordic Hygge — so property lords can reshape their digital domains in a breath.",
+          "A modular array of architectural skins (Terracotta, Mountain Lodge, Nordic Hygge) so property lords can reshape their digital domains in a breath.",
         tags: ["Next.js", "TypeScript", "Sass"],
         externalLink: {
           label: "View Terracotta",
@@ -306,7 +306,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Achievement",
         description:
-          "Completed the great rites of backend development — balancing frontend craft with server-side enchantments.",
+          "Completed the great rites of backend development, balancing frontend craft with server-side enchantments.",
         tags: ["Backend", "Node.js", "Express"],
         achievedAt: "2020-07-01",
         externalLink: {
@@ -326,7 +326,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Achievement",
         description:
-          "Joined the ranks of professional web weavers — the true beginning of a long odyssey across digital seas.",
+          "Joined the ranks of professional web weavers, the true beginning of a long odyssey across digital seas.",
         tags: ["Career Milestone"],
         achievedAt: "2021-06-01",
       },
@@ -358,7 +358,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Secret",
         description:
-          "You found it — either by reading the wind (↑↑↓↓←→←→BA) or by noticing a faint glimmer on the northern ridge. Builders who hunt for delight tend to ship it, too.",
+          "You found it: either by reading the wind (↑↑↓↓←→←→BA) or by noticing a faint glimmer on the northern ridge. Builders who hunt for delight tend to ship it, too.",
         tags: ["Easter Egg", "Curiosity", "Konami"],
       },
     },
@@ -390,7 +390,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Achievement",
         description:
-          "Mission, product, and why this realm matters — customize through world content config.",
+          "Mission, product, and why this realm matters. Customize through world content config.",
         tags: ["Culture", "Mission", "Product"],
       },
     },
@@ -406,7 +406,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Character",
         description:
-          "Guild contact node — name, role, and note come from world content config.",
+          "Guild contact node: name, role, and note come from world content config.",
         tags: ["Team", "Leadership"],
       },
     },

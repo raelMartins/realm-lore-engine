@@ -38,8 +38,8 @@ export const RealmOverview: React.FC<RealmOverviewProps> = ({
     : "";
   const blurb =
     realm === "adventurer"
-      ? "Western isles — craft, shipped relics, and the adventurer's path."
-      : `Eastern shore — ${data.companyName}, allies, and the main quest.`;
+      ? "Western isles: craft, shipped relics, and the adventurer's path."
+      : `Eastern shore: ${data.companyName}, allies, and the main quest.`;
   const isWest = realm === "adventurer";
 
   return (

@@ -226,7 +226,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                   Chart a meeting
                 </h2>
                 <p className="mt-0.5 text-xs text-realm-silver-muted">
-                  Pick a time that works — stays inside the realm.
+                  Pick a time that works. Stays inside the realm.
                 </p>
               </div>
               <button

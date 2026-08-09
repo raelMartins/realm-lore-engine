@@ -115,7 +115,7 @@ export function validateGuildPlacement(
 
 export const PLACEMENT_ERROR_MESSAGE: Record<PlacementError, string> = {
   off_land: 'Pins must be charted on Guild Shore land.',
-  too_close: 'Too close to an existing pin — pick more open ground.',
+  too_close: 'Too close to an existing pin. Pick more open ground.',
   cap_reached: 'This realm has reached its pin charting limit.',
   invalid_coords: 'Invalid map coordinates.',
 };

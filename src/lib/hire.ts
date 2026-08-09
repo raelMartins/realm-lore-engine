@@ -21,7 +21,7 @@ export const HIRE_MOTIONS: {
   {
     id: 'portal',
     label: 'Portal',
-    blurb: 'A teal rift opens — the adventurer steps through.',
+    blurb: 'A teal rift opens. The adventurer steps through.',
   },
   {
     id: 'burst',

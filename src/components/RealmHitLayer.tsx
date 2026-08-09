@@ -201,6 +201,30 @@ export const RealmLabelOverlay: React.FC<RealmLabelOverlayProps> = ({
       preserveAspectRatio="none"
       aria-hidden
     >
+      <defs>
+        <filter
+          id="realm-label-shadow"
+          x="-40%"
+          y="-40%"
+          width="180%"
+          height="180%"
+        >
+          <feDropShadow
+            dx="0"
+            dy="0.4"
+            stdDeviation="0.55"
+            floodColor="#000000"
+            floodOpacity="0.9"
+          />
+          <feDropShadow
+            dx="0"
+            dy="0"
+            stdDeviation="0.85"
+            floodColor="#000000"
+            floodOpacity="0.55"
+          />
+        </filter>
+      </defs>
       {(["adventurer", "company"] as RealmSide[]).map((realm) => {
         const active =
           forceHover || hoveredRealm === realm || selectedRealm === realm;
@@ -218,7 +242,10 @@ export const RealmLabelOverlay: React.FC<RealmLabelOverlayProps> = ({
             fontSize={1.55}
             fontFamily="var(--font-cinzel), serif"
             letterSpacing="0.05"
-            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.75)" }}
+            stroke="rgba(0,0,0,0.45)"
+            strokeWidth={0.28}
+            paintOrder="stroke fill"
+            filter="url(#realm-label-shadow)"
           >
             {realmLabel(realm, labels)}
           </text>

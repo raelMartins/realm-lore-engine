@@ -251,7 +251,7 @@ export default function Home() {
     const panWaitMs = reduced ? 360 : 1150;
     const enterMs = reduced ? 120 : 950;
     const preCalendarMs = schedulingUrl ? (reduced ? 200 : 2000) : 0;
-    // Arcs run from forge (align) through to calendar open — not gated on banner.
+    // Arcs run from forge (align) through to calendar open, not gated on banner.
     const trailSpanMs =
       alignMs +
       postBannerMs +
@@ -275,7 +275,7 @@ export default function Home() {
     soundFx.playSelectSound();
     await sleep(celebrateMs);
 
-    // 1) Forge begins — color align + skill arcs start (banner still up)
+    // 1) Forge begins, color align + skill arcs start (banner still up)
     setRealmColorPhase("aligning");
     setShowTransferTrails(true);
     await sleep(alignMs);
@@ -410,7 +410,7 @@ export default function Home() {
     if (!already) {
       setSecretToast(
         source === "konami"
-          ? "Konami accepted — a secret node shimmers into view."
+          ? "Konami accepted: a secret node shimmers into view."
           : pin.coordinates.y < 40
             ? "You noticed a faint glimmer on the northern ridge."
             : "A quiet shimmer answers from the southern shore.",

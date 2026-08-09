@@ -246,7 +246,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
       }
     };
 
-    // Immediate estimate, then 1–2 frames to measure real height — no perpetual RAF.
+    // Immediate estimate, then 1–2 frames to measure real height, no perpetual RAF.
     place(false);
     let settle = 0;
     const settleFrames = () => {
@@ -521,7 +521,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                   {pin.category === "job" &&
                     (pin.content.startDate || pin.content.endDate) && (
                       <p className="mt-1.5 font-mono text-[11px] tracking-wide text-[var(--ink-soft)]">
-                        {formatIsoDate(pin.content.startDate) ?? "—"}
+                        {formatIsoDate(pin.content.startDate) ?? "-"}
                         {" → "}
                         {formatIsoDate(pin.content.endDate) ?? "Present"}
                       </p>
@@ -733,7 +733,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                               Timeline
                             </h3>
                             <p className="text-sm text-[var(--ink-soft)]">
-                              {formatIsoDate(pin.content.startDate) ?? "—"}
+                              {formatIsoDate(pin.content.startDate) ?? "-"}
                               {" → "}
                               {formatIsoDate(pin.content.endDate) ?? "Ongoing"}
                             </p>

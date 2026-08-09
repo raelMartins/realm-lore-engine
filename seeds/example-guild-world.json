@@ -2,7 +2,7 @@
   "worldId": "example-guild",
   "companyName": "Example Guild",
   "tagline": "A sample east-isle world for local seeding",
-  "customPitchMessage": "Welcome — this payload was loaded via the dev seed endpoint.",
+  "customPitchMessage": "Welcome. This payload was loaded via the dev seed endpoint.",
   "realmLabelCompany": "Example Shore",
   "targetTeamMembers": [
     {

@@ -196,7 +196,7 @@ export const AllianceCongrats: React.FC<AllianceCongratsProps> = ({
                 Your deeds cross the channel to{" "}
                 <span className="font-semibold">{companyName}</span>. Skills,
                 stories, and hard-won markers flow east as the shores share one
-                color — and one cause.
+                color, and one cause.
               </motion.p>
 
               <motion.p

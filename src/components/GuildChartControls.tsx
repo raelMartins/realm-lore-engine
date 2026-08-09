@@ -761,7 +761,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                     <label className="block text-xs text-realm-silver-muted">
                       End date
                       <span className="ml-1 text-[10px] opacity-70">
-                        (optional — leave empty if current)
+                        (optional; leave empty if current)
                       </span>
                       <input
                         type="date"
