@@ -41,6 +41,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const close = () => {
+    setIsOpen(false);
+    setQuery("");
+  };
+
   const filteredPins =
     query === ""
       ? pins
@@ -77,8 +82,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-[#040a0e]/70 p-4 pt-20 backdrop-blur-md">
-      <div className="glass-panel-strong w-full max-w-lg overflow-hidden rounded-3xl border-white/15 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-[#040a0e]/70 p-4 pt-20 backdrop-blur-md"
+      role="presentation"
+      onClick={close}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search map lore"
+        className="glass-panel-strong w-full max-w-lg overflow-hidden rounded-3xl border-white/15 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3.5">
           <Search className="h-5 w-5 shrink-0 text-realm-teal" />
           <input
@@ -91,7 +106,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           />
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={close}
             className="glass-btn rounded-full p-2 text-realm-silver-muted hover:text-realm-silver"
             aria-label="Close search"
           >
@@ -99,7 +114,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           </button>
         </div>
 
-        <div className="max-h-80 overflow-y-auto p-2">
+        <div className="glass-scroll max-h-80 overflow-y-auto p-2">
           {grouped.length === 0 ? (
             <p className="py-8 text-center text-xs text-realm-silver-muted">
               No matching lore nodes found.
@@ -107,7 +122,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           ) : (
             grouped.map((group) => (
               <div key={group.realm} className="mb-2">
-                <p className="px-3 py-2 font-display text-[10px] font-semibold uppercase tracking-[0.14em] text-realm-teal-soft">
+                <p
+                  className={`px-3 py-2 font-display text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                    group.realm === "adventurer"
+                      ? "text-[color:var(--pin-west-stroke)]"
+                      : "text-realm-teal-soft"
+                  }`}
+                >
                   {group.label}
                 </p>
                 {group.pins.map((pin) => (
@@ -116,12 +137,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     type="button"
                     onClick={() => {
                       onSelectPin(pin);
-                      setIsOpen(false);
-                      setQuery("");
+                      close();
                     }}
-                    className="group flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition-all hover:border-realm-teal/25 hover:bg-white/5"
+                    className={`group flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition-all hover:bg-white/5 ${
+                      pin.realm === "adventurer"
+                        ? "hover:border-[color:color-mix(in_srgb,var(--pin-west-stroke)_30%,transparent)]"
+                        : "hover:border-realm-teal/25"
+                    }`}
                   >
-                    <div className="glass-btn rounded-2xl p-2.5 text-realm-teal transition-colors group-hover:border-realm-teal/40 group-hover:text-realm-teal-soft">
+                    <div
+                      className={`glass-btn rounded-2xl p-2.5 transition-colors ${
+                        pin.realm === "adventurer"
+                          ? "text-[color:var(--pin-west-fill)] group-hover:border-[color:color-mix(in_srgb,var(--pin-west-stroke)_40%,transparent)]"
+                          : "text-realm-teal group-hover:border-realm-teal/40 group-hover:text-realm-teal-soft"
+                      }`}
+                    >
                       <MapPin className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">

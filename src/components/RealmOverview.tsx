@@ -94,7 +94,11 @@ export const RealmOverview: React.FC<RealmOverviewProps> = ({
               </button>
             </div>
 
-            <div className="flex-1 space-y-1.5 overflow-y-auto parchment-scroll px-3 py-3">
+            <div
+              className={`flex-1 space-y-1.5 overflow-y-auto px-3 py-3 glass-scroll ${
+                isWest ? "glass-scroll-west" : ""
+              }`}
+            >
               {pins.length === 0 ? (
                 <p className="px-2 py-6 text-center text-xs text-realm-silver-muted">
                   No nodes charted in this realm yet.

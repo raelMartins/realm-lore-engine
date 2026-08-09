@@ -1062,6 +1062,67 @@ body {
   border-color: rgba(45, 212, 191, 0.25);
 }
 
+/* Glass popup scrollbars — thin, themed to the panel accent */
+.glass-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(94, 234, 212, 0.45) rgba(255, 255, 255, 0.04);
+}
+
+.glass-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.glass-scroll::-webkit-scrollbar-track {
+  margin: 6px 0;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 9999px;
+}
+
+.glass-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(94, 234, 212, 0.55) 0%,
+    rgba(45, 212, 191, 0.35) 100%
+  );
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.glass-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(94, 234, 212, 0.75) 0%,
+    rgba(45, 212, 191, 0.5) 100%
+  );
+  background-clip: padding-box;
+}
+
+.glass-scroll-west {
+  scrollbar-color: color-mix(in srgb, var(--pin-west-stroke) 55%, transparent)
+    rgba(255, 255, 255, 0.04);
+}
+
+.glass-scroll-west::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pin-west-stroke) 65%, transparent) 0%,
+    color-mix(in srgb, var(--pin-west-glow) 40%, transparent) 100%
+  );
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.glass-scroll-west::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pin-west-stroke) 85%, transparent) 0%,
+    color-mix(in srgb, var(--pin-west-glow) 55%, transparent) 100%
+  );
+  background-clip: padding-box;
+}
+
 /* Forge align / united — west accents ease into guild teal. */
 .realm-atmosphere {
   transition:
