@@ -14,6 +14,7 @@ import { loadWorld } from '@/lib/world/loadWorld';
 
 const PIN_TYPES: PinType[] = [
   'character',
+  'job',
   'project',
   'achievement',
   'quest',
@@ -22,6 +23,7 @@ const PIN_TYPES: PinType[] = [
 
 const DEFAULT_ICONS: Record<PinType, string> = {
   character: 'User',
+  job: 'Briefcase',
   project: 'Boxes',
   achievement: 'Trophy',
   quest: 'Scroll',
@@ -130,6 +132,15 @@ function normalizeContent(
         url,
       };
     }
+  }
+
+  if (category === 'job') {
+    const startDate = cleanDate(raw.startDate);
+    const endDate = cleanDate(raw.endDate);
+    if (startDate) content.startDate = startDate;
+    if (endDate) content.endDate = endDate;
+    const tasks = cleanTags(raw.tasks);
+    if (tasks) content.tasks = tasks;
   }
 
   if (category === 'achievement') {

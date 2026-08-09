@@ -12,6 +12,7 @@ import {
 
 const PIN_TYPES: PinType[] = [
   'character',
+  'job',
   'project',
   'achievement',
   'quest',
@@ -20,6 +21,7 @@ const PIN_TYPES: PinType[] = [
 
 const DEFAULT_ICONS: Record<PinType, string> = {
   character: 'User',
+  job: 'Briefcase',
   project: 'Boxes',
   achievement: 'Trophy',
   quest: 'Scroll',

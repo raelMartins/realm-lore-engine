@@ -42,6 +42,7 @@ const TYPE_META: Record<
   { label: string; Icon: React.ComponentType<{ className?: string }> }
 > = {
   character: { label: "Character", Icon: Icons.User },
+  job: { label: "Job", Icon: Icons.Briefcase },
   project: { label: "Project", Icon: Boxes },
   achievement: { label: "Achievement", Icon: Trophy },
   quest: { label: "Quest", Icon: Scroll },
@@ -133,6 +134,9 @@ function formatIsoDate(iso?: string): string | null {
 
 function pinHasBack(pin: LorePin): boolean {
   if (pin.category === "quest") return true;
+  if (pin.category === "job") {
+    return Boolean(pin.content.tasks?.length || pin.content.markdownBody);
+  }
   if (pin.category === "easter_egg") {
     return Boolean(
       pin.content.stats?.length ||
@@ -494,6 +498,15 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                     {pin.subtitle}
                   </p>
 
+                  {pin.category === "job" &&
+                    (pin.content.startDate || pin.content.endDate) && (
+                      <p className="mt-1.5 font-mono text-[11px] tracking-wide text-[var(--ink-soft)]">
+                        {formatIsoDate(pin.content.startDate) ?? "—"}
+                        {" → "}
+                        {formatIsoDate(pin.content.endDate) ?? "Present"}
+                      </p>
+                    )}
+
                   <div className="parchment-body mt-3 rounded-xl p-3 text-sm leading-relaxed">
                     {pin.content.description}
                   </div>
@@ -577,6 +590,33 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                         The path is written on the front. The seal alone remains
                         here.
                       </p>
+                    </div>
+                  ) : pin.category === "job" ? (
+                    <div>
+                      <h3 className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--seal)]">
+                        Duties of the post
+                      </h3>
+                      {pin.content.tasks && pin.content.tasks.length > 0 ? (
+                        <ul className="space-y-2.5">
+                          {pin.content.tasks.map((task, index) => (
+                            <li
+                              key={`${task.slice(0, 24)}-${index}`}
+                              className="flex gap-2.5 text-sm leading-relaxed text-[var(--ink-soft)]"
+                            >
+                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--seal)]" />
+                              <span>{task}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : pin.content.markdownBody ? (
+                        <div className="parchment-body rounded-xl p-3 text-sm leading-relaxed whitespace-pre-wrap">
+                          {pin.content.markdownBody}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-[var(--ink-faint)]">
+                          No duties recorded for this posting.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <>

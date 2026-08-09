@@ -1,5 +1,6 @@
 export type PinType =
   | 'character'
+  | 'job'
   | 'project'
   | 'achievement'
   | 'quest'
@@ -60,14 +61,16 @@ export interface LorePin {
     };
     /** Character — ISO date (YYYY-MM-DD) when they joined the guild */
     joinedAt?: string;
-    /** Project — ISO start date */
+    /** Project / job — ISO start date */
     startDate?: string;
-    /** Project — ISO end date (omit or empty if ongoing) */
+    /** Project / job — ISO end date (omit or empty if ongoing) */
     endDate?: string;
     /** Achievement — ISO date unlocked */
     achievedAt?: string;
     /** Achievement — guild character pin ids who contributed */
     contributorIds?: string[];
+    /** Job — duties / bullets shown on the card back */
+    tasks?: string[];
   };
 }
 

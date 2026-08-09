@@ -75,6 +75,26 @@ export const defaultWorldData: CompanyLoreConfig = {
       },
     },
     {
+      id: "job-spatial-wright",
+      title: "Senior Full-Stack Engineer",
+      subtitle: "Independent Contracts & Product Guilds",
+      category: "job",
+      realm: "adventurer",
+      iconName: "Briefcase",
+      coordinates: { x: 34, y: 36 },
+      content: {
+        badge: "Job",
+        description:
+          "A chapter of forge-work across product shores — shipping spatial UIs, lore systems, and high-polish web realms under real constraints.",
+        startDate: "2021-03-01",
+        tasks: [
+          "Charted interactive map and canvas experiences for product teams.",
+          "Led TypeScript/React architecture for complex client-side state.",
+          "Partnered with design to keep lore, motion, and accessibility aligned.",
+        ],
+      },
+    },
+    {
       id: "sanctuary-craft",
       title: "Craft Sanctuary",
       subtitle: "Stack & Working Style",

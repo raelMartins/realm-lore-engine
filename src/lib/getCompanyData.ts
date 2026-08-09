@@ -9,6 +9,7 @@ const LEGACY_CATEGORY_MAP: Record<string, PinType> = {
   quest: 'quest',
   easter_egg: 'easter_egg',
   character: 'character',
+  job: 'job',
   project: 'project',
   achievement: 'achievement',
 };
@@ -32,8 +33,11 @@ export function normalizePin(pin: LorePin): LorePin {
   let avatarId = pin.avatarId;
 
   if (category === 'character') {
-    if (!isAvatarAllowedForRealm(avatarId, realm)) {
-      avatarId = realm === 'adventurer' ? 'me' : 'cool';
+    // Adventurer portrait is always the reserved `me` avatar, regardless of paste.
+    if (realm === 'adventurer') {
+      avatarId = 'me';
+    } else if (!isAvatarAllowedForRealm(avatarId, realm)) {
+      avatarId = 'cool';
     }
   } else {
     avatarId = undefined;

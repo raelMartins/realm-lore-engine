@@ -14,6 +14,7 @@ import type { AttributeStat, LorePin, PinType } from "@/types/world";
 
 const PIN_TYPES: { id: PinType; label: string }[] = [
   { id: "character", label: "Character" },
+  { id: "job", label: "Job" },
   { id: "project", label: "Project" },
   { id: "achievement", label: "Achievement" },
   { id: "quest", label: "Quest" },
@@ -235,6 +236,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
   const [linkLabel, setLinkLabel] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [questCta, setQuestCta] = useState<QuestCtaMode>("none");
+  const [tasks, setTasks] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [avatarsExpanded, setAvatarsExpanded] = useState(false);
@@ -260,6 +262,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
     setLinkLabel("");
     setLinkUrl("");
     setQuestCta("none");
+    setTasks([]);
     setSubmitError(null);
     setCategory("character");
     setAvatarsExpanded(false);
@@ -271,11 +274,13 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
 
   const titleLabel = useMemo(() => {
     if (category === "character") return "Name";
+    if (category === "job") return "Role / title";
     return "Title";
   }, [category]);
 
   const subtitleLabel = useMemo(() => {
     if (category === "character") return "Mantle";
+    if (category === "job") return "Company / guild";
     if (category === "quest") return "Subtitle (optional)";
     return "Subtitle";
   }, [category]);
@@ -340,6 +345,12 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
       }
     }
 
+    if (category === "job") {
+      if (startDate) content.startDate = startDate;
+      if (endDate) content.endDate = endDate;
+      if (tasks.length) content.tasks = tasks;
+    }
+
     if (category === "achievement") {
       if (achievedAt) content.achievedAt = achievedAt;
       if (contributorIds.length) content.contributorIds = contributorIds;
@@ -375,7 +386,11 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
         body: JSON.stringify({
           title,
           subtitle:
-            category === "character" || category === "quest" ? subtitle : "",
+            category === "character" ||
+            category === "quest" ||
+            category === "job"
+              ? subtitle
+              : "",
           category,
           avatarId: category === "character" ? avatarId : undefined,
           coordinates: draft.coordinates,
@@ -647,6 +662,19 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                     </label>
                   )}
 
+                  {category === "job" && (
+                    <label className="block text-xs text-realm-silver-muted">
+                      {subtitleLabel}
+                      <input
+                        required
+                        value={subtitle}
+                        onChange={(e) => setSubtitle(e.target.value)}
+                        placeholder="e.g. Moonwell Forge"
+                        className={fieldFullClass}
+                      />
+                    </label>
+                  )}
+
                   {category === "quest" && (
                     <label className="block text-xs text-realm-silver-muted">
                       {subtitleLabel}
@@ -712,6 +740,33 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
+                        className={fieldFullClass}
+                      />
+                    </label>
+                  )}
+
+                  {category === "job" && (
+                    <label className="block text-xs text-realm-silver-muted">
+                      Start date
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className={fieldFullClass}
+                      />
+                    </label>
+                  )}
+
+                  {category === "job" && (
+                    <label className="block text-xs text-realm-silver-muted">
+                      End date
+                      <span className="ml-1 text-[10px] opacity-70">
+                        (optional — leave empty if current)
+                      </span>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
                         className={fieldFullClass}
                       />
                     </label>
@@ -849,6 +904,17 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                       onChange={setTags}
                       placeholder="Add a skill…"
                     />
+                  )}
+
+                  {category === "job" && (
+                    <div className="sm:col-span-2">
+                      <ChipEditor
+                        label="Duties / tasks (card back)"
+                        values={tasks}
+                        onChange={setTasks}
+                        placeholder="Add a duty…"
+                      />
+                    </div>
                   )}
 
                   {category === "character" && (
