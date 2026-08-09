@@ -243,7 +243,7 @@ export default function Home() {
 
     const celebrateMs = reduced ? 200 : 900;
     const alignMs = reduced ? 200 : 2800;
-    const postBannerMs = reduced ? 120 : 400;
+    const postBannerMs = reduced ? 120 : 1000;
     const focusMs = reduced ? 200 : 750;
     const exitMs = reduced ? 80 : 1100;
     const holdGoneMs = reduced ? 120 : 380;
@@ -280,7 +280,7 @@ export default function Home() {
     setShowTransferTrails(true);
     await sleep(alignMs);
 
-    // 2) Banner clears; colors stay aligned (arcs keep drawing)
+    // 2) Banner clears; brief hold so arcs stay readable before portal
     setCongratsOpen(false);
     setRealmColorPhase("aligned");
     setAllianceForged(true);
