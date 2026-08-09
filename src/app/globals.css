@@ -937,6 +937,31 @@ body {
   border-color: rgba(45, 212, 191, 0.28);
 }
 
+.realm-isle-label {
+  fill: rgba(226, 232, 240, 0.72);
+  stroke: rgba(0, 0, 0, 0.28);
+  stroke-width: 0.14;
+  opacity: 0.85;
+  transition:
+    fill 0.2s ease-out,
+    stroke 0.2s ease-out,
+    stroke-width 0.2s ease-out,
+    opacity 0.2s ease-out;
+}
+
+.realm-isle-label-active {
+  fill: #f8fafc;
+  stroke: rgba(0, 0, 0, 0.38);
+  stroke-width: 0.2;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .realm-isle-label {
+    transition: none;
+  }
+}
+
 /* West amethyst glass (overview + pin tooltips); morphs to teal on forge. */
 .realm-overview-west.glass-panel-strong,
 .glass-west.glass-panel-strong {

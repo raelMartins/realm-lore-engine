@@ -75,7 +75,6 @@ function realmLabel(
 }
 
 export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
-  labels,
   selectedRealm,
   onSelectRealm,
   colorPhase = "idle",
@@ -133,7 +132,7 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
             className={`cursor-pointer active:cursor-grabbing ${
               slowAlign && realm === "adventurer"
                 ? "transition-[fill,stroke,stroke-width,filter] duration-[2800ms] ease-in-out"
-                : "transition-[fill,stroke,stroke-width] duration-200"
+                : "transition-[fill,stroke,stroke-width,filter] duration-200 ease-out"
             }`}
             onMouseEnter={() => setHover(realm)}
             onMouseLeave={() => setHover(null)}
@@ -156,36 +155,11 @@ export const RealmHitLayer: React.FC<RealmHitLayerProps> = ({
           />
         );
       })}
-
-      {/* Idle labels stay under pins; elevated copy renders in RealmLabelOverlay */}
-      {(["adventurer", "company"] as RealmSide[]).map((realm) => {
-        const elevated =
-          forceHover || hovered === realm || selectedRealm === realm;
-        if (elevated) return null;
-        const anchor = REALM_HIT_LABELS[realm];
-        return (
-          <text
-            key={`idle-${realm}`}
-            x={anchor.x}
-            y={anchor.y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="pointer-events-none select-none"
-            fill="rgba(226, 232, 240, 0.7)"
-            fontSize={1.55}
-            fontFamily="var(--font-cinzel), serif"
-            letterSpacing="0.05"
-            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.75)" }}
-          >
-            {realmLabel(realm, labels)}
-          </text>
-        );
-      })}
     </svg>
   );
 };
 
-/** Island names drawn above pins while hovered / selected / celebrating. */
+/** Island names above pins — idle muted, brighten on hover with a quick fade. */
 export const RealmLabelOverlay: React.FC<RealmLabelOverlayProps> = ({
   labels,
   selectedRealm,
@@ -204,31 +178,23 @@ export const RealmLabelOverlay: React.FC<RealmLabelOverlayProps> = ({
       <defs>
         <filter
           id="realm-label-shadow"
-          x="-40%"
-          y="-40%"
-          width="180%"
-          height="180%"
+          x="-30%"
+          y="-30%"
+          width="160%"
+          height="160%"
         >
           <feDropShadow
             dx="0"
-            dy="0.4"
-            stdDeviation="0.55"
+            dy="0.25"
+            stdDeviation="0.35"
             floodColor="#000000"
-            floodOpacity="0.9"
-          />
-          <feDropShadow
-            dx="0"
-            dy="0"
-            stdDeviation="0.85"
-            floodColor="#000000"
-            floodOpacity="0.55"
+            floodOpacity="0.75"
           />
         </filter>
       </defs>
       {(["adventurer", "company"] as RealmSide[]).map((realm) => {
         const active =
           forceHover || hoveredRealm === realm || selectedRealm === realm;
-        if (!active) return null;
         const anchor = REALM_HIT_LABELS[realm];
         return (
           <text
@@ -237,13 +203,12 @@ export const RealmLabelOverlay: React.FC<RealmLabelOverlayProps> = ({
             y={anchor.y}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="select-none"
-            fill="#f8fafc"
+            className={`realm-isle-label select-none ${
+              active ? "realm-isle-label-active" : ""
+            }`}
             fontSize={1.55}
             fontFamily="var(--font-cinzel), serif"
             letterSpacing="0.05"
-            stroke="rgba(0,0,0,0.45)"
-            strokeWidth={0.28}
             paintOrder="stroke fill"
             filter="url(#realm-label-shadow)"
           >
