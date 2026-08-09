@@ -150,40 +150,45 @@ export default function Home() {
     let cancelled = false;
 
     async function load() {
-      try {
-        const { data, worldId: id } = await refreshWorld();
-        if (cancelled) return;
+      const worldPromise = refreshWorld().catch((error: unknown) => {
+        console.error("Failed to load /api/world, using local fallback:", error);
+        return null;
+      });
+      const unlockPromise = fetch("/api/guild/unlock")
+        .then(async (unlockRes) => {
+          if (!unlockRes.ok) return null;
+          return (await unlockRes.json()) as { unlocked?: boolean };
+        })
+        .catch(() => null);
+
+      const [worldResult, unlockStatus] = await Promise.all([
+        worldPromise,
+        unlockPromise,
+      ]);
+
+      if (cancelled) return;
+
+      if (worldResult) {
+        const { data, worldId: id } = worldResult;
         setWorldData(data);
         setWorldId(id);
         setExploredIds(loadExploredPinIds(id));
         setRevealedSecrets(loadRevealedSecrets(id));
-        // Adventurer always homes on the west isle; clear any stale east visit.
         const home = homeUnitedState();
         setUnitedState(home);
         saveUnitedState(id, home);
         setHiddenPinId(null);
-      } catch (error) {
-        console.error("Failed to load /api/world, using local fallback:", error);
-        if (!cancelled) {
-          setWorldData(getCompanyData());
-          setExploredIds(loadExploredPinIds("default"));
-          setRevealedSecrets(loadRevealedSecrets("default"));
-          const home = homeUnitedState();
-          setUnitedState(home);
-          saveUnitedState("default", home);
-          setHiddenPinId(null);
-        }
+      } else {
+        setWorldData(getCompanyData());
+        setExploredIds(loadExploredPinIds("default"));
+        setRevealedSecrets(loadRevealedSecrets("default"));
+        const home = homeUnitedState();
+        setUnitedState(home);
+        saveUnitedState("default", home);
+        setHiddenPinId(null);
       }
 
-      try {
-        const unlockRes = await fetch("/api/guild/unlock");
-        if (unlockRes.ok) {
-          const status = (await unlockRes.json()) as { unlocked?: boolean };
-          if (!cancelled && status.unlocked) setUnlocked(true);
-        }
-      } catch {
-        /* explore-only if unlock status fails */
-      }
+      if (unlockStatus?.unlocked) setUnlocked(true);
     }
 
     void load();

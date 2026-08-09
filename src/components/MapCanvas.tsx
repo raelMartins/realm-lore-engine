@@ -311,7 +311,7 @@ function MapMarkerPin({
 
   return (
     <div
-      className={`relative ${unitedRing ? "drop-shadow-[0_0_8px_rgba(94,234,212,0.55)]" : "drop-shadow-xl"} ${shellMotionClass ?? ""}`}
+      className={`relative ${unitedRing ? "drop-shadow-[0_0_6px_rgba(94,234,212,0.45)]" : "drop-shadow-md"} ${shellMotionClass ?? ""}`}
       style={{ width: w, height: h }}
     >
       <svg
@@ -404,7 +404,7 @@ const CalibrationMarker = () => (
   </div>
 );
 
-export const MapCanvas: React.FC<MapCanvasProps> = ({
+export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
   data,
   selectedPinId,
   onSelectPin,
@@ -514,15 +514,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         src={mapImageUrl}
                         alt="Realm map"
                         draggable={false}
+                        decoding="async"
+                        fetchPriority="high"
                         className="absolute inset-0 h-full w-full object-fill select-none"
-                        style={{
-                          filter:
-                            "sepia(0.42) contrast(1.12) saturate(0.78) brightness(0.92) hue-rotate(-8deg)",
-                        }}
                       />
-                      <div className="absolute inset-0 bg-[#c4a574]/18 mix-blend-multiply" />
-                      <div className="absolute inset-0 bg-[#2a1f14]/25 mix-blend-overlay" />
-                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(10,6,4,0.55)_100%)]" />
+                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(10,6,4,0.45)_100%)]" />
                     </>
                   ) : (
                     <>
@@ -665,7 +661,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         }}
                         className={`map-pin-hit group pointer-events-auto absolute origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none hover:z-[70] ${
                           isSelected ? "z-50 scale-125" : "z-10 hover:scale-110"
-                        } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-all duration-300"} ${
+                        } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-[transform,opacity] duration-300"} ${
                           placementMode || hireBusy || isHidden
                             ? "pointer-events-none"
                             : ""
@@ -700,18 +696,18 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           }
                         >
                         <div
-                          className={`pointer-events-none absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-md transition-opacity duration-300 ${
+                          className={`pointer-events-none absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity duration-300 ${
                             isVeiledSecret ? "h-7 w-7" : "h-14 w-14"
                           } ${
                             isSelected
                               ? isCompany
-                                ? "bg-teal-400/70 opacity-80 animate-pulse"
-                                : "bg-amber-300/60 opacity-80 animate-pulse"
+                                ? "bg-teal-400/70 opacity-80 blur-md animate-pulse"
+                                : "bg-amber-300/60 opacity-80 blur-md animate-pulse"
                               : isVeiledSecret
-                                ? "bg-teal-300/20 opacity-60 animate-pulse"
+                                ? "bg-teal-300/20 opacity-60 blur-sm animate-pulse"
                                 : isCompany
-                                  ? "bg-teal-400/30 opacity-0 group-hover:opacity-100"
-                                  : "bg-amber-200/25 opacity-0 group-hover:opacity-100"
+                                  ? "bg-teal-400/30 opacity-0 group-hover:opacity-100 blur-md"
+                                  : "bg-amber-200/25 opacity-0 group-hover:opacity-100 blur-md"
                           }`}
                         />
 
@@ -738,10 +734,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           )}
                         </MapMarkerPin>
 
-                        {!isVeiledSecret && (
+                        {!isVeiledSecret && hoverTip?.id === pin.id && (
                         <div
-                          className={`pointer-events-none absolute left-1/2 z-[80] -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 ${
-                            hoverTip?.id === pin.id && hoverTip.below
+                          className={`pointer-events-none absolute left-1/2 z-[80] -translate-x-1/2 ${
+                            hoverTip.below
                               ? "top-full mt-2"
                               : "bottom-full mb-2"
                           }`}
@@ -778,4 +774,6 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       </TransformWrapper>
     </div>
   );
-};
+});
+
+MapCanvas.displayName = "MapCanvas";

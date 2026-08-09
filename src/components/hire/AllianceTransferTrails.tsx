@@ -34,15 +34,19 @@ function hash01(input: string, salt = 0): number {
 }
 
 /** Sample guild-land candidates once (map % space). */
-function sampleGuildLand(): Point[] {
+const GUILD_LAND_SAMPLES: Point[] = (() => {
   const land: Point[] = [];
-  for (let y = GUILD_BOUNDS.minY + 4; y <= GUILD_BOUNDS.maxY - 4; y += 1.5) {
-    for (let x = GUILD_BOUNDS.minX + 4; x <= GUILD_BOUNDS.maxX - 4; x += 1.5) {
+  for (let y = GUILD_BOUNDS.minY + 4; y <= GUILD_BOUNDS.maxY - 4; y += 2) {
+    for (let x = GUILD_BOUNDS.minX + 4; x <= GUILD_BOUNDS.maxX - 4; x += 2) {
       const p = { x, y };
       if (isOnGuildLand(p)) land.push(p);
     }
   }
   return land;
+})();
+
+function sampleGuildLand(): Point[] {
+  return GUILD_LAND_SAMPLES;
 }
 
 /**

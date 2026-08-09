@@ -44,7 +44,7 @@ export const Confetti: React.FC<ConfettiProps> = ({
 }) => {
   const [show, setShow] = useState(false);
   const reduced = prefersReducedMotion();
-  const count = intensity === "heavy" ? 320 : 48;
+  const count = intensity === "heavy" ? 72 : 36;
 
   const particles = useMemo<Particle[]>(() => {
     if (reduced) return [];
@@ -115,7 +115,6 @@ export const Confetti: React.FC<ConfettiProps> = ({
                   transform: `rotate(${p.rotate}deg)`,
                   animation: `hire-confetti-fall ${p.duration}s linear ${p.delay}s forwards`,
                   ["--confetti-drift" as string]: `${p.drift}px`,
-                  boxShadow: `0 0 10px ${p.color}66`,
                 } as React.CSSProperties
               }
             />

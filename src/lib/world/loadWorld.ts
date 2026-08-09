@@ -115,9 +115,7 @@ async function seedWorldIfMissing(db: Client, worldId: string): Promise<void> {
     ],
   });
 
-  for (const pin of eastPins) {
-    await db.execute(pinToRow(worldId, pin));
-  }
+  await Promise.all(eastPins.map((pin) => db.execute(pinToRow(worldId, pin))));
 }
 
 async function loadWorldFromTurso(

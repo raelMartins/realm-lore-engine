@@ -69,7 +69,9 @@ function computePlacement(
   pinId: string,
   cardHeight: number,
 ): CardPlacement {
-  const el = document.querySelector(`[data-pin-id="${pinId}"]`);
+  const el =
+    document.getElementById(`pin-focus-${pinId}`) ??
+    document.querySelector(`[data-pin-id="${pinId}"]`);
   if (!el) return { mode: "fallback" };
 
   const rect = el.getBoundingClientRect();
@@ -158,6 +160,11 @@ function pinHasBack(pin: LorePin): boolean {
   );
 }
 
+const FLIP_TRANSITION = {
+  duration: 0.28,
+  ease: [0.4, 0.05, 0.2, 1] as [number, number, number, number],
+};
+
 export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   pin,
   pins = [],
@@ -171,6 +178,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   const [placementPinId, setPlacementPinId] = useState<string | null>(null);
   const [positioned, setPositioned] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [reduceMotion] = useState(() => prefersReducedMotion());
 
   flippedRef.current = flipped;
 
@@ -200,75 +208,75 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
     const pinId = pin.id;
     let cancelled = false;
     let raf = 0;
-    let revealed = false;
-    let lastLeft = -999;
-    let lastTop = -999;
     let lastMode: CardPlacement["mode"] | null = null;
 
     setFlipped(false);
     setPositioned(false);
 
-    // Sync estimate before paint so we never flash the centered fallback.
-    const initial = computePlacement(pinId, ESTIMATED_CARD_HEIGHT);
-    setPlacement(initial);
-    setPlacementPinId(pinId);
-    if (initial.mode === "anchored") {
-      lastMode = "anchored";
-      lastLeft = initial.left;
-      lastTop = initial.top;
-    } else {
-      lastMode = "fallback";
-    }
-
-    const applyPlacement = (next: CardPlacement) => {
-      if (next.mode === "fallback") {
-        if (lastMode !== "fallback") {
-          lastMode = "fallback";
-          setPlacement(next);
-        }
-        return;
-      }
-      if (
-        lastMode !== "anchored" ||
-        Math.abs(next.left - lastLeft) > 0.5 ||
-        Math.abs(next.top - lastTop) > 0.5
-      ) {
-        lastMode = "anchored";
-        lastLeft = next.left;
-        lastTop = next.top;
-        setPlacement(next);
-      }
+    const syncDomPosition = (next: Extract<CardPlacement, { mode: "anchored" }>) => {
+      const el = cardRef.current;
+      if (!el) return;
+      el.style.left = `${next.left}px`;
+      el.style.top = `${next.top}px`;
     };
 
-    const track = () => {
-      if (cancelled) return;
-
+    const place = (reveal: boolean) => {
+      if (cancelled || flippedRef.current) return;
       const measured = cardRef.current?.offsetHeight ?? 0;
+      const next = computePlacement(
+        pinId,
+        measured || ESTIMATED_CARD_HEIGHT,
+      );
 
-      if (!flippedRef.current) {
-        applyPlacement(
-          computePlacement(pinId, measured || ESTIMATED_CARD_HEIGHT),
-        );
-      }
-
-      // Reveal only after we have a real layout height (or fallback with no pin el).
-      if (!revealed) {
-        if (measured > 0 || lastMode === "fallback") {
-          if (measured > 0 && !flippedRef.current) {
-            applyPlacement(computePlacement(pinId, measured));
-          }
-          revealed = true;
-          setPositioned(true);
+      if (next.mode === "anchored") {
+        syncDomPosition(next);
+        if (lastMode !== "anchored") {
+          lastMode = "anchored";
+          setPlacement(next);
+          setPlacementPinId(pinId);
         }
+      } else if (lastMode !== "fallback") {
+        lastMode = "fallback";
+        setPlacement(next);
+        setPlacementPinId(pinId);
       }
 
-      raf = requestAnimationFrame(track);
+      if (reveal && !cancelled) {
+        setPositioned(true);
+      }
     };
 
-    raf = requestAnimationFrame(track);
+    // Immediate estimate, then 1–2 frames to measure real height — no perpetual RAF.
+    place(false);
+    let settle = 0;
+    const settleFrames = () => {
+      if (cancelled) return;
+      place(settle >= 1);
+      settle += 1;
+      if (settle < 3) raf = requestAnimationFrame(settleFrames);
+    };
+    raf = requestAnimationFrame(settleFrames);
+
+    const onResize = () => place(true);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+
+    let ro: ResizeObserver | null = null;
+    const roRaf = requestAnimationFrame(() => {
+      if (cancelled || !cardRef.current) return;
+      ro = new ResizeObserver(() => {
+        if (!flippedRef.current) place(true);
+      });
+      ro.observe(cardRef.current);
+    });
+
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(roRaf);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      ro?.disconnect();
     };
   }, [pin?.id]);
 
@@ -277,7 +285,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
 
   const cardPositionClass =
     placement?.mode === "anchored"
-      ? "fixed z-50 max-h-[min(85dvh,72vh,520px)]"
+      ? "fixed z-50 max-h-[min(85dvh,72vh,520px)] will-change-transform"
       : "fixed top-1/2 left-1/2 z-50 w-[min(100%-2rem,340px)] -translate-x-1/2 -translate-y-1/2 max-h-[min(85dvh,72vh,520px)]";
 
   const avatar = pin ? getAvatarById(pin.avatarId) : undefined;
@@ -388,7 +396,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-[#040a0e]/40 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-[#040a0e]/50"
           />
 
           {placementReady && (
@@ -431,15 +439,14 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                     : { rotateY: 0, opacity: 1 }
                 }
                 transition={
-                  prefersReducedMotion()
+                  reduceMotion
                     ? { duration: 0 }
                     : {
-                        duration: 0.32,
-                        ease: [0.4, 0.05, 0.2, 1],
-                        delay: flipped ? 0 : 0.16,
+                        ...FLIP_TRANSITION,
+                        delay: flipped ? 0 : 0.14,
                         opacity: {
-                          duration: 0.18,
-                          delay: flipped ? 0 : 0.16,
+                          duration: 0.16,
+                          delay: flipped ? 0 : 0.14,
                         },
                       }
                 }
@@ -540,15 +547,14 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                     : { rotateY: -90, opacity: 0 }
                 }
                 transition={
-                  prefersReducedMotion()
+                  reduceMotion
                     ? { duration: 0 }
                     : {
-                        duration: 0.32,
-                        ease: [0.4, 0.05, 0.2, 1],
-                        delay: flipped ? 0.16 : 0,
+                        ...FLIP_TRANSITION,
+                        delay: flipped ? 0.14 : 0,
                         opacity: {
-                          duration: 0.18,
-                          delay: flipped ? 0.16 : 0,
+                          duration: 0.16,
+                          delay: flipped ? 0.14 : 0,
                         },
                       }
                 }
