@@ -135,6 +135,15 @@ function formatIsoDate(iso?: string): string | null {
   });
 }
 
+/** Loom share/embed → playable embed src, or null. */
+function loomEmbedSrc(url: string | undefined): string | null {
+  if (!url) return null;
+  const match = url.match(
+    /loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/i,
+  );
+  return match ? `https://www.loom.com/embed/${match[1]}` : null;
+}
+
 function pinHasBack(pin: LorePin): boolean {
   if (pin.category === "quest") return true;
   if (pin.category === "job") {
@@ -315,6 +324,10 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
       )
     : [];
 
+  const pensieveEmbed = loomEmbedSrc(
+    outboundLinks.find((l) => loomEmbedSrc(l.url))?.url,
+  );
+
   const actionFooter =
     pin && (outboundLinks.length > 0 || pin.content.callToAction) ? (
       <div
@@ -486,8 +499,12 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                 </div>
 
                 <div className="parchment-scroll relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-5">
-                  {/* Hero image / icon */}
-                  <div className="relative mb-3 overflow-hidden rounded-xl border border-[rgba(90,70,45,0.22)] bg-[rgba(42,34,24,0.06)] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]">
+                  {/* Hero image / icon / Pensieve embed */}
+                  <div
+                    className="relative mb-3 overflow-hidden rounded-xl border border-[rgba(90,70,45,0.22)] bg-[rgba(42,34,24,0.06)] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]"
+                    data-no-flip
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {pin.category === "character" && avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -495,6 +512,16 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                         alt=""
                         className="aspect-[5/4] w-full object-cover object-top"
                       />
+                    ) : pensieveEmbed ? (
+                      <div className="relative aspect-video w-full bg-[rgba(42,34,24,0.12)]">
+                        <iframe
+                          src={pensieveEmbed}
+                          title={pin.title}
+                          allow="fullscreen; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="absolute inset-0 h-full w-full border-0"
+                        />
+                      </div>
                     ) : (
                       <div className="flex aspect-[5/4] w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(ellipse_at_50%_40%,rgba(15,118,110,0.12),transparent_65%)]">
                         <span className="parchment-icon flex h-16 w-16 rounded-2xl">

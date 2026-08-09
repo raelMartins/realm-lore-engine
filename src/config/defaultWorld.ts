@@ -364,17 +364,21 @@ export const defaultWorldData: CompanyLoreConfig = {
     },
     {
       id: "easter-egg-potter",
-      title: "The Hidden Horcrux",
-      subtitle: "Personal Secret",
+      title: "The Pensieve Memory",
+      subtitle: "A Horcrux of Hard-Won Craft",
       category: "easter_egg",
       realm: "adventurer",
       iconName: "Sparkles",
       coordinates: { x: 28, y: 80 },
       content: {
-        badge: "Secret",
+        badge: "Secret · Easter Egg",
         description:
-          "A quiet scholar of Hogwarts lore and collector of magical tales. You must be quite the seeker to have uncovered this fragment.",
-        tags: ["Harry Potter", "Books", "Curiosity"],
+          "Well met, seeker. Most wanderers pass this ridge without a second glance — but you have the curiosity of a Ravenclaw and the nerve of a Gryffindor. What you have uncovered is no ordinary trinket: a Pensieve memory, silver and swirling, of the 3D allocation engine forged in the Myxellia vaults. Tip your wand (or your cursor) into the basin below, and walk the corridors of that spatial spell as its maker once did. Mischief managed… almost. The best secrets are the ones that teach.",
+        tags: ["Harry Potter", "Easter Egg", "3D Allocation", "Pensieve"],
+        externalLink: {
+          label: "Peer into the Pensieve",
+          url: "https://www.loom.com/share/962becb1b0294c0ba3cb31b32eff9e24",
+        },
       },
     },
 
