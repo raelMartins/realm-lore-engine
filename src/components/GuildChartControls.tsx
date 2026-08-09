@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getAvatarById, getSelectableAvatars } from "@/config/avatars";
 import type { AttributeStat, LorePin, PinType } from "@/types/world";
+import { SecretInput } from "@/components/SecretInput";
 
 const PIN_TYPES: { id: PinType; label: string }[] = [
   { id: "character", label: "Character" },
@@ -512,14 +513,15 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <input
-                type="password"
-                autoFocus
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Passphrase"
-                className="mt-4 w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-realm-silver outline-none placeholder:text-realm-silver-muted/50 focus:border-teal-400/40"
-              />
+              <div className="mt-4">
+                <SecretInput
+                  autoFocus
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  placeholder="Passphrase"
+                  className="rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-realm-silver outline-none placeholder:text-realm-silver-muted/50 focus:border-teal-400/40"
+                />
+              </div>
               {unlockError && (
                 <p className="mt-2 text-xs text-amber-200/90">{unlockError}</p>
               )}

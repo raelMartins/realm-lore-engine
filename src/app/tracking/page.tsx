@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { SecretInput } from "@/components/SecretInput";
 
 type VisitEvent = {
   id: number;
@@ -264,14 +265,15 @@ export default function TrackingPage() {
             <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-realm-teal-soft">
               Access secret
             </label>
-            <input
-              type="password"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-3.5 py-2.5 text-sm text-realm-silver outline-none focus:border-teal-400/40"
-              placeholder="TRACKING_SECRET"
-              autoComplete="current-password"
-            />
+            <div className="mt-2">
+              <SecretInput
+                value={secret}
+                onChange={(e) => setSecret(e.target.value)}
+                className="rounded-2xl border border-white/10 bg-black/20 px-3.5 py-2.5 text-sm text-realm-silver outline-none focus:border-teal-400/40"
+                placeholder="TRACKING_SECRET"
+                autoComplete="current-password"
+              />
+            </div>
             <button
               type="submit"
               disabled={loading || !secret.trim()}
