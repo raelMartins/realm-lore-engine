@@ -37,6 +37,7 @@ import {
 } from "@/lib/hire";
 import { SecretToast } from "@/components/SecretToast";
 import { LandscapeGate } from "@/components/LandscapeGate";
+import { DesktopHint } from "@/components/DesktopHint";
 import { useKonami } from "@/lib/useKonami";
 import {
   EASTER_EGG_PIN_ID,
@@ -532,6 +533,7 @@ export default function Home() {
         </p>
       </div>
       <div id="realm-app" className="contents">
+      <DesktopHint />
       {hireBusy && (
         <div
           className="fixed inset-0 z-[70]"

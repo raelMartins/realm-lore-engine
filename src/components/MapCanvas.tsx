@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -19,6 +19,20 @@ import {
 import { RealmSide } from "@/types/world";
 import { getAvatarById } from "@/config/avatars";
 import type { HireMotion } from "@/lib/hire";
+
+const PHONE_MIN_EDGE = 768;
+
+function getMapScales(): { initial: number; min: number } {
+  if (typeof window === "undefined") return { initial: 1, min: 1 };
+  const minEdge = Math.min(window.innerWidth, window.innerHeight);
+  const phoneIsh = minEdge < PHONE_MIN_EDGE;
+  const shortLandscape = window.innerHeight <= 520 && window.innerWidth > window.innerHeight;
+  if (phoneIsh || shortLandscape) {
+    // Pull back so more of the realm reads like the desktop fit, with teal margin.
+    return { initial: 0.84, min: 0.72 };
+  }
+  return { initial: 1, min: 1 };
+}
 
 export type CameraCommand =
   | {
@@ -416,6 +430,23 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     id: string;
     below: boolean;
   } | null>(null);
+  const [scales, setScales] = useState({ initial: 1, min: 1 });
+
+  useEffect(() => {
+    const update = () => {
+      const next = getMapScales();
+      setScales((prev) =>
+        prev.initial === next.initial && prev.min === next.min ? prev : next,
+      );
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, []);
 
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!placementMode || !onPlaceAttempt) return;
@@ -434,8 +465,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       }`}
     >
       <TransformWrapper
-        initialScale={1}
-        minScale={1}
+        key={`map-scale-${scales.initial}-${scales.min}`}
+        initialScale={scales.initial}
+        minScale={scales.min}
         maxScale={4}
         centerOnInit
         limitToBounds
