@@ -217,7 +217,7 @@ export async function GET(req: NextRequest) {
         SELECT id, visit_id, name, payload_json, client_ts, received_at
         FROM visit_events
         WHERE world_id = ? AND visit_id IN (${placeholders})
-        ORDER BY received_at ASC
+        ORDER BY COALESCE(client_ts, received_at) DESC
       `,
       args: [worldId, ...visitIds],
     });
