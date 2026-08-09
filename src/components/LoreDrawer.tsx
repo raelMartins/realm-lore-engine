@@ -8,11 +8,12 @@ import {
   ExternalLink,
   Mail,
   Sparkles,
-  Boxes,
   Trophy,
   Scroll,
   CalendarDays,
   RotateCcw,
+  Hammer,
+  Layers,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { getAvatarById } from "@/config/avatars";
@@ -42,8 +43,8 @@ const TYPE_META: Record<
   { label: string; Icon: React.ComponentType<{ className?: string }> }
 > = {
   character: { label: "Character", Icon: Icons.User },
-  job: { label: "Job", Icon: Icons.Briefcase },
-  project: { label: "Project", Icon: Boxes },
+  job: { label: "Job", Icon: Hammer },
+  project: { label: "Project", Icon: Layers },
   achievement: { label: "Achievement", Icon: Trophy },
   quest: { label: "Quest", Icon: Scroll },
   easter_egg: { label: "Secret", Icon: Sparkles },
@@ -293,27 +294,39 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
     setFlipped((v) => !v);
   };
 
+  const outboundLinks = pin
+    ? [
+        ...(pin.content.externalLinks ?? []),
+        ...(pin.content.externalLink ? [pin.content.externalLink] : []),
+      ].filter(
+        (link, index, all) =>
+          link.url &&
+          all.findIndex((other) => other.url === link.url) === index,
+      )
+    : [];
+
   const actionFooter =
-    pin && (pin.content.externalLink || pin.content.callToAction) ? (
+    pin && (outboundLinks.length > 0 || pin.content.callToAction) ? (
       <div
-        className="relative z-10 flex gap-2 border-t parchment-rule px-4 pb-5 pt-3"
+        className="relative z-10 flex flex-wrap gap-2 border-t parchment-rule px-4 pb-5 pt-3"
         data-no-flip
         onClick={(e) => e.stopPropagation()}
       >
-        {pin.content.externalLink && (
+        {outboundLinks.map((link) => (
           <a
-            href={pin.content.externalLink.url}
+            key={link.url}
+            href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="parchment-btn-secondary flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
+            className="parchment-btn-secondary flex min-w-0 flex-1 basis-[calc(50%-0.25rem)] items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-center text-[11px] font-semibold leading-tight"
           >
             <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{pin.content.externalLink.label}</span>
+            <span className="truncate">{link.label}</span>
           </a>
-        )}
+        ))}
 
         {pin.content.callToAction?.actionType === "hire" &&
-          !pin.content.externalLink && (
+          outboundLinks.length === 0 && (
             <button
               type="button"
               onClick={() => {

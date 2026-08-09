@@ -36,18 +36,17 @@ export const defaultWorldData: CompanyLoreConfig = {
       realm: "adventurer",
       iconName: "User",
       avatarId: "me",
-      coordinates: { x: 22, y: 28 },
+      coordinates: { x: 26, y: 42 },
       content: {
         badge: "Character",
         description:
-          "Specialized in React, TypeScript, Vue.js, Node, and Spatial Web Architectures.",
+          "Cartographer of digital interfaces. I forge React, Next.js, and Express architectures into spatial canvases — at home in the frontend mists and the deeper backend vaults.",
         stats: [
           { label: "Frontend Architecture", value: 98 },
-          { label: "Spatial / Canvas UI", value: 95 },
-          { label: "System Design", value: 92 },
-          { label: "AI-Native Speed", value: 99 },
+          { label: "Backend Forging", value: 90 },
+          { label: "Spatial / WebGL UIs", value: 95 },
         ],
-        tags: ["React", "TypeScript", "Next.js", "Vue.js", "Cursor AI"],
+        tags: ["React", "TypeScript", "Next.js", "Express.js"],
         callToAction: {
           label: "Offer Alliance",
           actionType: "hire",
@@ -56,57 +55,296 @@ export const defaultWorldData: CompanyLoreConfig = {
       },
     },
     {
-      id: "relic-3d-allocator",
-      title: "3D Spatial Allocation Engine",
-      subtitle: "Interactive Real Estate Canvas",
-      category: "project",
-      realm: "adventurer",
-      iconName: "Boxes",
-      coordinates: { x: 28, y: 48 },
-      content: {
-        badge: "Project",
-        description:
-          "Built an interactive web tool overlaying dynamic 3D/SVG shapes directly onto site plans for real-time unit allocation.",
-        tags: ["SVG", "Spatial UI", "Canvas Rendering", "Complex State"],
-        externalLink: {
-          label: "Portfolio Case Study",
-          url: "https://aboutmartins.vercel.app/",
-        },
-      },
-    },
-    {
-      id: "job-spatial-wright",
-      title: "Senior Full-Stack Engineer",
-      subtitle: "Independent Contracts & Product Guilds",
+      id: "job-beautynbrushes",
+      title: "Senior Full-Stack Architect",
+      subtitle: "BeautyNBrushes Guild",
       category: "job",
       realm: "adventurer",
-      iconName: "Briefcase",
-      coordinates: { x: 34, y: 36 },
+      iconName: "Hammer",
+      coordinates: { x: 20, y: 18 },
       content: {
         badge: "Job",
         description:
-          "A chapter of forge-work across product shores — shipping spatial UIs, lore systems, and high-polish web realms under real constraints.",
-        startDate: "2021-03-01",
+          "Leading a migration from legacy shores into a modern fortress — localized payment gates and a merchant discovery atlas for wayfarers.",
+        startDate: "2026-01-01",
         tasks: [
-          "Charted interactive map and canvas experiences for product teams.",
-          "Led TypeScript/React architecture for complex client-side state.",
-          "Partnered with design to keep lore, motion, and accessibility aligned.",
+          "Architected a full-stack migration onto React, Next.js, TypeScript, and Express.",
+          "Forged multi-region payment vaults bridging Stripe and Paystack for recurring tithes.",
+          "Built a location-based discovery atlas for travelers and regional merchants.",
         ],
       },
     },
     {
-      id: "sanctuary-craft",
-      title: "Craft Sanctuary",
-      subtitle: "Stack & Working Style",
+      id: "job-myxellia",
+      title: "Senior Frontend Commander",
+      subtitle: "Myxellia Property Forge",
+      category: "job",
+      realm: "adventurer",
+      iconName: "Hammer",
+      coordinates: { x: 16, y: 28 },
+      content: {
+        badge: "Job",
+        description:
+          "Governed the frontend of multi-tenant estates — capital transfers at scale and interactive spatial allocation systems.",
+        startDate: "2024-01-01",
+        endDate: "2026-05-31",
+        tasks: [
+          "Engineered an interactive 3D terrain allocation engine for visual domain exploration.",
+          "Built a modular theming engine so property lords could reshape their digital keeps.",
+          "Led the end-to-end reconstruction of the corporate portal.",
+        ],
+      },
+    },
+    {
+      id: "job-micserah-betrelate",
+      title: "Frontend Scribe",
+      subtitle: "Micserah Ltd / Betrelate",
+      category: "job",
+      realm: "adventurer",
+      iconName: "Hammer",
+      coordinates: { x: 34, y: 52 },
+      content: {
+        badge: "Job",
+        description:
+          "Laid the foundation of a social amphitheater for scholars and sports fans — real-time missives and dynamic scrolls.",
+        startDate: "2021-12-01",
+        endDate: "2024-04-30",
+        tasks: [
+          "Architected a real-time social platform from the ground up for 10,000+ active citizens.",
+          "Optimized visual scroll rendering and cut initial load times by over 30%.",
+        ],
+      },
+    },
+    {
+      id: "job-fireswitch",
+      title: "Frontend Cartographer",
+      subtitle: "FireSwitch Technologies",
+      category: "job",
+      realm: "adventurer",
+      iconName: "Hammer",
+      coordinates: { x: 36, y: 42 },
+      content: {
+        badge: "Job",
+        description:
+          "Redrew the primary maps for the IBErrands logistics fleet and wove a real-time channel into the parchment.",
+        startDate: "2021-06-01",
+        endDate: "2021-12-31",
+        tasks: [
+          "Redesigned the primary web application for smoother navigation.",
+          "Mentored apprentices in the craft of web development.",
+        ],
+      },
+    },
+    {
+      id: "job-classytouch",
+      title: "Remote Full-Stack Artisan",
+      subtitle: "Classy Touch Merchants",
+      category: "job",
+      realm: "adventurer",
+      iconName: "Hammer",
+      coordinates: { x: 18, y: 64 },
+      content: {
+        badge: "Job",
+        description:
+          "Built frictionless entry gates and multi-currency vaults to modernize an essential merchant realm.",
+        startDate: "2019-06-01",
+        endDate: "2022-03-31",
+        tasks: [
+          "Integrated Paystack for secure, multi-currency exchanges.",
+          "Forged one-tap entry rites using Google verification seals.",
+        ],
+      },
+    },
+    {
+      id: "job-solarworld",
+      title: "WordPress Emissary",
+      subtitle: "SolarWorld",
+      category: "job",
+      realm: "adventurer",
+      iconName: "Hammer",
+      coordinates: { x: 24, y: 72 },
+      content: {
+        badge: "Job",
+        description:
+          "Channeled the work into digital form — the bridge between the senior builder and the patrons who needed a living site.",
+        startDate: "2020-09-01",
+        endDate: "2020-12-31",
+        tasks: [
+          "Collaborated with the senior engineer to raise the primary website.",
+          "Translated patron needs into clear, shippable lore for the build.",
+        ],
+      },
+    },
+    {
+      id: "project-3d-allocation",
+      title: "3D Domain Allocator",
+      subtitle: "Veerge Engine",
+      category: "project",
+      realm: "adventurer",
+      iconName: "Layers",
+      coordinates: { x: 34, y: 22 },
+      content: {
+        badge: "Project",
+        description:
+          "An interactive spatial tool where lords and investors navigate, inspect, and claim territories inside digital 3D models.",
+        tags: ["WebGL", "3D Layouts", "React"],
+        externalLink: {
+          label: "Inspect the Realm",
+          url: "https://veerge.myxellia.io/",
+        },
+      },
+    },
+    {
+      id: "project-vvd-application",
+      title: "The VVD Construct",
+      subtitle: "Scrollytelling Pitch",
+      category: "project",
+      realm: "adventurer",
+      iconName: "Layers",
+      coordinates: { x: 38, y: 32 },
+      content: {
+        badge: "Project",
+        description:
+          "A living application to another world-building guild: an auto-scrolling iMessage circle with the founders, pitching my craft as conversation rather than a cold scroll. Built with React, TypeScript, Framer Motion, and Cursor.",
+        tags: ["React", "TypeScript", "Framer Motion", "Cursor", "Scrollytelling"],
+        externalLink: {
+          label: "Open the Thread",
+          url: "https://martinsisperfectforvvd.vercel.app/",
+        },
+      },
+    },
+    {
+      id: "project-gidi-real-estate",
+      title: "Gidi Fractional Estates",
+      subtitle: "Investment Forge",
+      category: "project",
+      realm: "adventurer",
+      iconName: "Layers",
+      coordinates: { x: 16, y: 48 },
+      content: {
+        badge: "Project",
+        description:
+          "A fractional investment platform where commoners and lords alike can claim a share of the realm's grandest holdings.",
+        tags: ["React", "Next.js", "Fintech"],
+        externalLinks: [
+          {
+            label: "Client portal",
+            url: "https://app.gidirealestateinvestment.com/",
+          },
+          {
+            label: "Realtor portal",
+            url: "https://realtor.gidirealestateinvestment.com/",
+          },
+        ],
+      },
+    },
+    {
+      id: "project-draughts",
+      title: "The Ultimate Draughts",
+      subtitle: "Tavern Emulator",
+      category: "project",
+      realm: "adventurer",
+      iconName: "Layers",
+      coordinates: { x: 22, y: 56 },
+      content: {
+        badge: "Project",
+        description:
+          "A digital recreation of a classic tavern game from early in the journey — proof that with the right craft, anything can be built from raw code.",
+        tags: ["JavaScript", "React", "Webpack"],
+        externalLink: {
+          label: "Play a Match",
+          url: "https://ultimatedraughts.netlify.app/",
+        },
+      },
+    },
+    {
+      id: "project-expert-listing",
+      title: "Expert Listing Registry",
+      subtitle: "Estate Ledger",
+      category: "project",
+      realm: "adventurer",
+      iconName: "Layers",
+      coordinates: { x: 32, y: 66 },
+      content: {
+        badge: "Project",
+        description:
+          "An enterprise ledger for managing the realm's grand properties and commercial estates.",
+        tags: ["React", "Enterprise UI"],
+        externalLink: {
+          label: "View Registry",
+          url: "https://expertlisting.ng",
+        },
+      },
+    },
+    {
+      id: "project-myxellia-themes",
+      title: "Chameleon Castles",
+      subtitle: "Myxellia Theming Engine",
+      category: "project",
+      realm: "adventurer",
+      iconName: "Layers",
+      coordinates: { x: 36, y: 74 },
+      content: {
+        badge: "Project",
+        description:
+          "A modular array of architectural skins — Terracotta, Mountain Lodge, Nordic Hygge — so property lords can reshape their digital domains in a breath.",
+        tags: ["Next.js", "TypeScript", "Sass"],
+        externalLink: {
+          label: "View Terracotta",
+          url: "https://app.gidirealestateinvestment.com/",
+        },
+      },
+    },
+    {
+      id: "achievement-udemy-cert",
+      title: "Scroll of the Backend Arts",
+      subtitle: "Arcane Certification",
       category: "achievement",
       realm: "adventurer",
-      iconName: "Sparkles",
-      coordinates: { x: 24, y: 68 },
+      iconName: "Trophy",
+      coordinates: { x: 18, y: 38 },
       content: {
         badge: "Achievement",
         description:
-          "AI-native delivery, design-system thinking, and high-polish UI under real product constraints.",
-        tags: ["Design Systems", "Performance", "DX", "Accessibility"],
+          "Completed the great rites of backend development — balancing frontend craft with server-side enchantments.",
+        tags: ["Backend", "Node.js", "Express"],
+        achievedAt: "2020-07-01",
+        externalLink: {
+          label: "View Scroll",
+          url: "https://www.udemy.com/certificate/UC-99231148-d62f-4bba-8418-2f7586272170/",
+        },
+      },
+    },
+    {
+      id: "achievement-first-fulltime",
+      title: "Initiation of the Guild",
+      subtitle: "First Full-Time Quest",
+      category: "achievement",
+      realm: "adventurer",
+      iconName: "Trophy",
+      coordinates: { x: 38, y: 58 },
+      content: {
+        badge: "Achievement",
+        description:
+          "Joined the ranks of professional web weavers — the true beginning of a long odyssey across digital seas.",
+        tags: ["Career Milestone"],
+        achievedAt: "2021-06-01",
+      },
+    },
+    {
+      id: "achievement-first-website",
+      title: "The First Spark",
+      subtitle: "Genesis Build",
+      category: "achievement",
+      realm: "adventurer",
+      iconName: "Trophy",
+      coordinates: { x: 28, y: 12 },
+      content: {
+        badge: "Achievement",
+        description:
+          "The moment the first lines of code were spun into a living digital tapestry.",
+        tags: ["Genesis"],
+        achievedAt: "2016-01-01",
       },
     },
     {
@@ -116,12 +354,27 @@ export const defaultWorldData: CompanyLoreConfig = {
       category: "easter_egg",
       realm: "adventurer",
       iconName: "Sparkles",
-      coordinates: { x: 36, y: 14 },
+      coordinates: { x: 40, y: 12 },
       content: {
         badge: "Secret",
         description:
           "You found it — either by reading the wind (↑↑↓↓←→←→BA) or by noticing a faint glimmer on the northern ridge. Builders who hunt for delight tend to ship it, too.",
         tags: ["Easter Egg", "Curiosity", "Konami"],
+      },
+    },
+    {
+      id: "easter-egg-potter",
+      title: "The Hidden Horcrux",
+      subtitle: "Personal Secret",
+      category: "easter_egg",
+      realm: "adventurer",
+      iconName: "Sparkles",
+      coordinates: { x: 28, y: 80 },
+      content: {
+        badge: "Secret",
+        description:
+          "A quiet scholar of Hogwarts lore and collector of magical tales. You must be quite the seeker to have uncovered this fragment.",
+        tags: ["Harry Potter", "Books", "Curiosity"],
       },
     },
 

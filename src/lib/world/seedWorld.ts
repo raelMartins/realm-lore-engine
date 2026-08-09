@@ -21,8 +21,8 @@ const PIN_TYPES: PinType[] = [
 
 const DEFAULT_ICONS: Record<PinType, string> = {
   character: 'User',
-  job: 'Briefcase',
-  project: 'Boxes',
+  job: 'Hammer',
+  project: 'Layers',
   achievement: 'Trophy',
   quest: 'Scroll',
   easter_egg: 'Sparkles',

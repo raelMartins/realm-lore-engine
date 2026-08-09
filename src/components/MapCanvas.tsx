@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -236,7 +236,7 @@ function mapMarkerTone(opts: {
         stroke: "rgba(255,255,255,0.7)",
         aperture: "rgba(204, 251, 241, 0.92)",
         contentClass: "text-teal-950",
-        iconClass: "h-5 w-5",
+        iconClass: "h-4 w-4",
       };
     }
     return {
@@ -244,7 +244,7 @@ function mapMarkerTone(opts: {
       stroke: "rgba(255,255,255,0.7)",
       aperture: "rgba(255, 251, 235, 0.92)",
       contentClass: "text-slate-900",
-      iconClass: "h-5 w-5",
+      iconClass: "h-4 w-4",
     };
   }
   if (opts.isCompany) {
@@ -253,7 +253,7 @@ function mapMarkerTone(opts: {
       stroke: "rgba(94, 234, 212, 0.42)",
       aperture: "rgba(6, 24, 28, 0.72)",
       contentClass: "text-realm-teal-soft",
-      iconClass: "h-5 w-5",
+      iconClass: "h-4 w-4",
     };
   }
   if (opts.isSecret) {
@@ -262,7 +262,7 @@ function mapMarkerTone(opts: {
       stroke: "rgba(253, 230, 138, 0.48)",
       aperture: "rgba(12, 20, 24, 0.7)",
       contentClass: "text-amber-100",
-      iconClass: "h-5 w-5",
+      iconClass: "h-4 w-4",
     };
   }
   return {
@@ -270,7 +270,7 @@ function mapMarkerTone(opts: {
     stroke: "rgba(253, 230, 138, 0.35)",
     aperture: "rgba(12, 20, 24, 0.7)",
     contentClass: "text-amber-100/90",
-    iconClass: "h-5 w-5",
+    iconClass: "h-4 w-4",
   };
 }
 
@@ -412,6 +412,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   showTransferTrails = false,
   revealedSecretIds,
 }) => {
+  const [hoverTip, setHoverTip] = useState<{
+    id: string;
+    below: boolean;
+  } | null>(null);
+
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!placementMode || !onPlaceAttempt) return;
     const stage = e.currentTarget;
@@ -606,23 +611,35 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                           }
                           onSelectPin(pin);
                         }}
-                        onMouseEnter={() => {
+                        onMouseEnter={(e) => {
                           if (!placementMode && !hireBusy && !isHidden) {
                             soundFx.playHoverSound();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setHoverTip({
+                              id: pin.id,
+                              below: rect.top < 110,
+                            });
                           }
+                        }}
+                        onMouseLeave={() => {
+                          setHoverTip((prev) =>
+                            prev?.id === pin.id ? null : prev,
+                          );
                         }}
                         style={{
                           left: `${pin.coordinates.x}%`,
                           top: `${pin.coordinates.y}%`,
                           opacity: isHidden ? 0 : isVeiledSecret ? 0.35 : 1,
                         }}
-                        className={`map-pin-hit group pointer-events-auto absolute z-10 origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none ${
-                          isSelected ? "z-30 scale-125" : "hover:scale-110"
+                        className={`map-pin-hit group pointer-events-auto absolute origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none hover:z-[70] ${
+                          isSelected ? "z-50 scale-125" : "z-10 hover:scale-110"
                         } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-all duration-300"} ${
                           placementMode || hireBusy || isHidden
                             ? "pointer-events-none"
                             : ""
-                        } ${isVeiledSecret ? "z-[3]" : ""}`}
+                        } ${isVeiledSecret ? "z-[3]" : ""} ${
+                          hoverTip?.id === pin.id ? "z-[70]" : ""
+                        }`}
                         aria-hidden={isHidden}
                         aria-label={
                           isVeiledSecret ? "Faint glimmer on the ridge" : undefined
@@ -690,7 +707,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                         </MapMarkerPin>
 
                         {!isVeiledSecret && (
-                        <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100">
+                        <div
+                          className={`pointer-events-none absolute left-1/2 z-[80] -translate-x-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 ${
+                            hoverTip?.id === pin.id && hoverTip.below
+                              ? "top-full mt-2"
+                              : "bottom-full mb-2"
+                          }`}
+                        >
                           <div className="glass-panel-strong rounded-2xl px-3.5 py-2 text-center whitespace-nowrap shadow-2xl">
                             <p className="text-[9px] uppercase tracking-[0.12em] text-realm-teal-soft">
                               {pin.category}

@@ -50,10 +50,16 @@ export interface LorePin {
      * Character skillset chips / project tools.
      */
     tags?: string[];
+    /** Single outbound link (legacy / simple pins) */
     externalLink?: {
       label: string;
       url: string;
     };
+    /** Optional multiple outbound links (e.g. client + realtor portals) */
+    externalLinks?: {
+      label: string;
+      url: string;
+    }[];
     callToAction?: {
       label: string;
       actionType: 'email' | 'calendar' | 'modal' | 'hire';
