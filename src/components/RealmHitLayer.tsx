@@ -29,17 +29,17 @@ interface RealmLabelOverlayProps {
   colorPhase?: RealmColorPhase;
 }
 
-/** Adventurer = amber · Guild = teal (swapped from earlier teal-west / amber-east). */
+/** Adventurer = soft amethyst · Guild = teal (cool complements; silver stays UI chrome). */
 const REALM_FILL: Record<
   RealmSide,
   { idle: string; hover: string; selected: string; stroke: string; strokeIdle: string }
 > = {
   adventurer: {
-    idle: "rgba(251, 191, 36, 0.1)",
-    hover: "rgba(245, 158, 11, 0.36)",
-    selected: "rgba(245, 158, 11, 0.4)",
-    stroke: "rgba(253, 230, 138, 0.95)",
-    strokeIdle: "rgba(253, 230, 138, 0.4)",
+    idle: "rgba(167, 139, 250, 0.12)",
+    hover: "rgba(167, 139, 250, 0.34)",
+    selected: "rgba(139, 110, 230, 0.4)",
+    stroke: "rgba(221, 214, 254, 0.95)",
+    strokeIdle: "rgba(196, 181, 253, 0.45)",
   },
   company: {
     idle: "rgba(45, 212, 191, 0.12)",

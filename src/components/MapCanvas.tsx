@@ -260,9 +260,9 @@ function mapMarkerTone(opts: {
       };
     }
     return {
-      fill: "#f59e0b",
+      fill: "#8b6ee6",
       stroke: "rgba(255,255,255,0.7)",
-      aperture: "rgba(255, 251, 235, 0.92)",
+      aperture: "rgba(245, 243, 255, 0.94)",
       contentClass: "text-slate-900",
       iconClass: "h-4 w-4",
     };
@@ -278,18 +278,18 @@ function mapMarkerTone(opts: {
   }
   if (opts.isSecret) {
     return {
-      fill: "rgba(58, 48, 28, 0.92)",
-      stroke: "rgba(253, 230, 138, 0.48)",
+      fill: "rgba(42, 36, 58, 0.92)",
+      stroke: "rgba(196, 181, 253, 0.5)",
       aperture: "rgba(12, 20, 24, 0.7)",
-      contentClass: "text-amber-100",
+      contentClass: "text-violet-100",
       iconClass: "h-4 w-4",
     };
   }
   return {
-    fill: "rgba(58, 48, 28, 0.92)",
-    stroke: "rgba(253, 230, 138, 0.35)",
+    fill: "rgba(42, 36, 58, 0.92)",
+    stroke: "rgba(167, 139, 250, 0.4)",
     aperture: "rgba(12, 20, 24, 0.7)",
-    contentClass: "text-amber-100/90",
+    contentClass: "text-violet-100/90",
     iconClass: "h-4 w-4",
   };
 }
@@ -721,12 +721,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                             isSelected
                               ? isCompany
                                 ? "bg-teal-400/70 opacity-80 blur-md animate-pulse"
-                                : "bg-amber-300/60 opacity-80 blur-md animate-pulse"
+                                : "bg-violet-400/55 opacity-80 blur-md animate-pulse"
                               : isVeiledSecret
                                 ? "bg-teal-300/20 opacity-60 blur-sm animate-pulse"
                                 : isCompany
                                   ? "bg-teal-400/30 opacity-0 group-hover:opacity-100 blur-md"
-                                  : "bg-amber-200/25 opacity-0 group-hover:opacity-100 blur-md"
+                                  : "bg-violet-300/25 opacity-0 group-hover:opacity-100 blur-md"
                           }`}
                         />
 
