@@ -240,6 +240,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
   const [tasks, setTasks] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showChartConfirm, setShowChartConfirm] = useState(false);
   const [avatarsExpanded, setAvatarsExpanded] = useState(false);
 
   const guildAvatars = getSelectableAvatars("company");
@@ -267,6 +268,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
     setSubmitError(null);
     setCategory("character");
     setAvatarsExpanded(false);
+    setShowChartConfirm(false);
   };
 
   useEffect(() => {
@@ -375,15 +377,16 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
     return content;
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!draft) return;
+    if (!draft || submitting) return;
+    setSubmitError(null);
+    setShowChartConfirm(true);
+  };
 
-    const ok = window.confirm(
-      "Chart this pin on Guild Shore?\n\nOnce charted, pins cannot be removed from the map. Only chart nodes you mean to keep.",
-    );
-    if (!ok) return;
-
+  const confirmCreate = async () => {
+    if (!draft || submitting) return;
+    setShowChartConfirm(false);
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -972,6 +975,66 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                 </button>
               </div>
             </motion.form>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showChartConfirm && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Dismiss"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] bg-[#040a0e]/50 backdrop-blur-[2px]"
+              onClick={() => setShowChartConfirm(false)}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="chart-confirm-title"
+              initial={{ opacity: 0, y: 12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              className="glass-panel-strong fixed top-1/2 left-1/2 z-[90] w-[min(100%-2rem,380px)] -translate-x-1/2 -translate-y-1/2 rounded-[1.35rem] p-5"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-300/80">
+                Guild steward
+              </p>
+              <h2
+                id="chart-confirm-title"
+                className="font-display mt-1 text-lg text-realm-silver"
+              >
+                Chart this pin?
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-realm-silver-muted">
+                Once charted, pins cannot be removed from the map. Only place
+                nodes you mean to keep on Guild Shore.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChartConfirm(false)}
+                  className="glass-btn flex-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-realm-mist hover:text-realm-silver"
+                >
+                  Keep editing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmCreate()}
+                  disabled={submitting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-teal-400/40 bg-teal-500/90 px-3 py-2.5 text-sm font-semibold text-teal-950 disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Chart pin"
+                  )}
+                </button>
+              </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
