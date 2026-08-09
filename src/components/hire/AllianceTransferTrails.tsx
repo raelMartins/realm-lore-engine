@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { LorePin } from "@/types/world";
-import { ADVENTURER_PIN_ID } from "@/lib/hire";
 import {
   GUILD_BOUNDS,
   isOnGuildLand,
@@ -19,6 +18,7 @@ interface TransferArc {
   d: string;
   from: Point;
   to: Point;
+  angle: number;
   delay: number;
   duration: number;
 }
@@ -36,8 +36,8 @@ function hash01(input: string, salt = 0): number {
 /** Sample guild-land candidates once (map % space). */
 const GUILD_LAND_SAMPLES: Point[] = (() => {
   const land: Point[] = [];
-  for (let y = GUILD_BOUNDS.minY + 4; y <= GUILD_BOUNDS.maxY - 4; y += 2) {
-    for (let x = GUILD_BOUNDS.minX + 4; x <= GUILD_BOUNDS.maxX - 4; x += 2) {
+  for (let y = GUILD_BOUNDS.minY + 4; y <= GUILD_BOUNDS.maxY - 4; y += 2.5) {
+    for (let x = GUILD_BOUNDS.minX + 4; x <= GUILD_BOUNDS.maxX - 4; x += 2.5) {
       const p = { x, y };
       if (isOnGuildLand(p)) land.push(p);
     }
@@ -45,15 +45,11 @@ const GUILD_LAND_SAMPLES: Point[] = (() => {
   return land;
 })();
 
-function sampleGuildLand(): Point[] {
-  return GUILD_LAND_SAMPLES;
-}
-
 /**
  * Greedy farthest-point packing so destinations spread across the isle.
  */
 function packEvenTargets(count: number, seeds: string[]): Point[] {
-  const land = sampleGuildLand();
+  const land = GUILD_LAND_SAMPLES;
   if (land.length === 0 || count <= 0) return [];
 
   const picks: Point[] = [];
@@ -85,7 +81,10 @@ function packEvenTargets(count: number, seeds: string[]): Point[] {
   return picks.slice(0, count);
 }
 
-function curvePath(from: Point, to: Point, bend: number): string {
+function curvePath(from: Point, to: Point, bend: number): {
+  d: string;
+  angle: number;
+} {
   const mx = (from.x + to.x) / 2;
   const my = (from.y + to.y) / 2;
   const dx = to.x - from.x;
@@ -95,16 +94,19 @@ function curvePath(from: Point, to: Point, bend: number): string {
   const ny = dx / len;
   const cx = mx + nx * bend * 12;
   const cy = my + ny * bend * 12 - 4;
-  return `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`;
+  const angle = (Math.atan2(to.y - cy, to.x - cx) * 180) / Math.PI;
+  return {
+    d: `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`,
+    angle,
+  };
 }
 
 function buildArcs(pins: LorePin[]): TransferArc[] {
-  // Character pin portals itself — no transfer arc from it.
+  // Projects + achievements only — jobs/characters stay put visually.
   const sources = pins.filter(
     (p) =>
       p.realm === "adventurer" &&
-      p.category !== "easter_egg" &&
-      p.id !== ADVENTURER_PIN_ID,
+      (p.category === "project" || p.category === "achievement"),
   );
   const targets = packEvenTargets(
     sources.length,
@@ -115,52 +117,43 @@ function buildArcs(pins: LorePin[]): TransferArc[] {
     const from = pin.coordinates;
     const to = targets[index] ?? { x: 78, y: 52 };
     const bend = (hash01(pin.id, 9) - 0.5) * 1.2;
+    const { d, angle } = curvePath(from, to, bend);
     return {
       id: pin.id,
-      d: curvePath(from, to, bend),
+      d,
       from,
       to,
-      delay: index * 0.1,
-      duration: 1.55 + hash01(pin.id, 2) * 0.45,
+      angle,
+      // Tight stagger — fewer arcs, quicker cascade.
+      delay: index * 0.045,
+      duration: 0.95 + hash01(pin.id, 2) * 0.2,
     };
   });
 }
 
 /**
- * Curved skill-transfer arcs from adventurer pins onto Guild Shore.
- * Drawn in map % space so they stay locked to geography under pan/zoom.
- * Geometry freezes when activated so portal migration doesn't move origins.
+ * Curved skill-transfer arcs from adventurer project/achievement pins
+ * onto Guild Shore. Geometry freezes on activate; CSS stroke draw only
+ * (no SMIL / animateMotion) so the cinematic stays smooth under pan/zoom.
  */
 export const AllianceTransferTrails: React.FC<AllianceTransferTrailsProps> = ({
   pins,
   active,
 }) => {
-  const liveArcs = useMemo(() => buildArcs(pins), [pins]);
-  const [frozenArcs, setFrozenArcs] = useState<TransferArc[] | null>(null);
-  const [settled, setSettled] = useState(false);
+  const [arcs, setArcs] = useState<TransferArc[] | null>(null);
+  const pinsRef = useRef(pins);
+  pinsRef.current = pins;
 
   useEffect(() => {
-    if (active) {
-      setFrozenArcs((prev) => prev ?? liveArcs);
-    } else {
-      setFrozenArcs(null);
-      setSettled(false);
+    if (!active) {
+      setArcs(null);
+      return;
     }
-  }, [active, liveArcs]);
+    // Capture once at activation — ignore subsequent pin identity churn.
+    setArcs((prev) => prev ?? buildArcs(pinsRef.current));
+  }, [active]);
 
-  useEffect(() => {
-    if (!active || !frozenArcs || frozenArcs.length === 0) return;
-    const maxMs =
-      Math.max(...frozenArcs.map((a) => a.delay + a.duration)) * 1000 + 40;
-    const id = window.setTimeout(() => setSettled(true), maxMs);
-    return () => window.clearTimeout(id);
-  }, [active, frozenArcs]);
-
-  const arcs = frozenArcs;
   if (!active || !arcs || arcs.length === 0) return null;
-
-  // Matched CSS ease-out: cubic-bezier(0, 0, 0.58, 1)
-  const easeOutSpline = "0 0 0.58 1";
 
   return (
     <svg
@@ -168,117 +161,60 @@ export const AllianceTransferTrails: React.FC<AllianceTransferTrailsProps> = ({
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
       aria-hidden
+      style={{ contain: "strict" }}
     >
       {arcs.map((arc) => (
         <g key={arc.id}>
           <circle
             cx={arc.from.x}
             cy={arc.from.y}
-            r={1.15}
+            r={0.9}
             fill="none"
             stroke="#2dd4bf"
-            strokeWidth={0.35}
-            opacity={1}
-            className={settled ? undefined : "alliance-transfer-origin-ring"}
-            style={settled ? undefined : { animationDelay: `${arc.delay}s` }}
+            strokeWidth={0.3}
+            className="alliance-transfer-origin-ring"
+            style={{ animationDelay: `${arc.delay}s` }}
           />
           <circle
             cx={arc.from.x}
             cy={arc.from.y}
-            r={0.35}
+            r={0.28}
             fill="#2dd4bf"
-            opacity={1}
-            className={settled ? undefined : "alliance-transfer-origin-core"}
-            style={settled ? undefined : { animationDelay: `${arc.delay}s` }}
+            className="alliance-transfer-origin-core"
+            style={{ animationDelay: `${arc.delay}s` }}
           />
 
-          {settled ? (
-            <>
-              <path
-                d={arc.d}
-                fill="none"
-                stroke="#2dd4bf"
-                strokeWidth={0.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <g transform={`translate(${arc.to.x} ${arc.to.y})`}>
-                {/* Approximate end orientation: aim from mid-curve toward target */}
-                <path
-                  d="M -1.1 -0.85 L 1.35 0 L -1.1 0.85 L -0.55 0 Z"
-                  fill="#2dd4bf"
-                  transform={`rotate(${arrowAngleDeg(arc.d, arc.to)})`}
-                />
-              </g>
-            </>
-          ) : (
-            <>
-              <path
-                d={arc.d}
-                fill="none"
-                stroke="#2dd4bf"
-                strokeOpacity={1}
-                strokeWidth={0.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray={1}
-                strokeDashoffset={1}
-                pathLength={1}
-              >
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from="1"
-                  to="0"
-                  dur={`${arc.duration}s`}
-                  begin={`${arc.delay}s`}
-                  fill="freeze"
-                  calcMode="spline"
-                  keyTimes="0;1"
-                  keySplines={easeOutSpline}
-                />
-              </path>
+          <path
+            d={arc.d}
+            fill="none"
+            stroke="#2dd4bf"
+            strokeWidth={0.65}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={1}
+            strokeDashoffset={1}
+            pathLength={1}
+            className="alliance-transfer-stroke"
+            style={{
+              animationDelay: `${arc.delay}s`,
+              animationDuration: `${arc.duration}s`,
+            }}
+          />
 
-              <g>
-                <path
-                  d="M -1.1 -0.85 L 1.35 0 L -1.1 0.85 L -0.55 0 Z"
-                  fill="#2dd4bf"
-                  opacity={0}
-                >
-                  <animate
-                    attributeName="opacity"
-                    from="0"
-                    to="1"
-                    dur="0.12s"
-                    begin={`${arc.delay}s`}
-                    fill="freeze"
-                  />
-                </path>
-                <animateMotion
-                  dur={`${arc.duration}s`}
-                  begin={`${arc.delay}s`}
-                  fill="freeze"
-                  rotate="auto"
-                  path={arc.d}
-                  calcMode="spline"
-                  keyTimes="0;1"
-                  keySplines={easeOutSpline}
-                />
-              </g>
-            </>
-          )}
+          <g
+            transform={`translate(${arc.to.x} ${arc.to.y}) rotate(${arc.angle})`}
+            className="alliance-transfer-arrow"
+            style={{
+              animationDelay: `${arc.delay + arc.duration * 0.82}s`,
+            }}
+          >
+            <path
+              d="M -1.1 -0.85 L 1.35 0 L -1.1 0.85 L -0.55 0 Z"
+              fill="#2dd4bf"
+            />
+          </g>
         </g>
       ))}
     </svg>
   );
 };
-
-/** Heading of the path at its end (degrees), for settled arrow placement. */
-function arrowAngleDeg(d: string, to: Point): number {
-  const match = d.match(
-    /M\s*([\d.-]+)\s+([\d.-]+)\s+Q\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
-  );
-  if (!match) return 0;
-  const cx = Number(match[3]);
-  const cy = Number(match[4]);
-  return (Math.atan2(to.y - cy, to.x - cx) * 180) / Math.PI;
-}

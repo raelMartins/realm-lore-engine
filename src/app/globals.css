@@ -820,18 +820,55 @@ body {
   }
 }
 
+@keyframes alliance-transfer-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes alliance-transfer-arrow-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .alliance-transfer-origin-ring,
 .alliance-transfer-origin-core {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: alliance-transfer-origin-in 0.35s ease-out forwards;
+  animation: alliance-transfer-origin-in 0.28s ease-out forwards;
+}
+
+.alliance-transfer-stroke {
+  animation-name: alliance-transfer-draw;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+  will-change: stroke-dashoffset;
+}
+
+.alliance-transfer-arrow {
+  opacity: 0;
+  animation: alliance-transfer-arrow-in 0.16s ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .alliance-transfer-origin-ring,
   .alliance-transfer-origin-core {
     animation-duration: 0.01ms !important;
+    opacity: 1;
+  }
+
+  .alliance-transfer-stroke {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .alliance-transfer-arrow {
+    animation: none;
     opacity: 1;
   }
 }

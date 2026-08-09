@@ -518,7 +518,6 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                         fetchPriority="high"
                         className="absolute inset-0 h-full w-full object-fill select-none"
                       />
-                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(10,6,4,0.45)_100%)]" />
                     </>
                   ) : (
                     <>
