@@ -448,7 +448,19 @@ body {
   position: relative;
   transition:
     --seal var(--alliance-accent-duration) ease-in-out,
-    --seal-soft var(--alliance-accent-duration) ease-in-out;
+    --seal-soft var(--alliance-accent-duration) ease-in-out,
+    --realm-seal var(--alliance-accent-duration) ease-in-out,
+    --realm-seal-soft var(--alliance-accent-duration) ease-in-out,
+    --realm-seal-bright var(--alliance-accent-duration) ease-in-out;
+}
+
+/* Guild shore cards stay teal; adventurer cards inherit seal (amethyst → teal on forge). */
+.parchment-card-east {
+  --realm-seal: #0f766e;
+  --realm-seal-soft: #0d9488;
+  --realm-seal-bright: #14b8a6;
+  --seal: var(--realm-seal);
+  --seal-soft: var(--realm-seal-soft);
 }
 
 .parchment-flip-shell {

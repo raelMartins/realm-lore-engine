@@ -292,6 +292,8 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
   const typeMeta = pin ? TYPE_META[pin.category] : null;
   const TypeIcon = typeMeta?.Icon ?? Sparkles;
   const hasBackDetail = Boolean(pin && pinHasBack(pin));
+  const parchmentAccentClass =
+    pin?.realm === "company" ? "parchment-card-east" : "";
 
   const contributors = pin?.content.contributorIds
     ?.map((id) => pins.find((p) => p.id === id))
@@ -429,7 +431,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
             <div className="relative [perspective:1200px]">
               {/* ── Front (defines shell size; stays in layout while flipped) ── */}
               <motion.div
-                className={`parchment-card flex max-h-[min(85dvh,72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
+                className={`parchment-card ${parchmentAccentClass} flex max-h-[min(85dvh,72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
                   hasBackDetail ? "cursor-pointer" : ""
                 }`}
                 initial={false}
@@ -537,7 +539,7 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
 
               {/* ── Back overlays the same box (must beat .parchment-card { position: relative }) ── */}
               <motion.div
-                className={`parchment-card flex max-h-[min(85dvh,72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
+                className={`parchment-card ${parchmentAccentClass} flex max-h-[min(85dvh,72vh,520px)] min-h-0 flex-col overflow-hidden rounded-[1.25rem] ${
                   hasBackDetail ? "cursor-pointer" : ""
                 }`}
                 initial={false}
