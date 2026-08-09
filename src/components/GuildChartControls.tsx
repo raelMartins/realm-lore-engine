@@ -378,6 +378,12 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft) return;
+
+    const ok = window.confirm(
+      "Chart this pin on Guild Shore?\n\nOnce charted, pins cannot be removed from the map. Only chart nodes you mean to keep.",
+    );
+    if (!ok) return;
+
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -596,7 +602,7 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-x-hidden overflow-y-auto parchment-scroll px-5 py-3.5">
+              <div className="glass-scroll flex-1 overflow-x-hidden overflow-y-auto px-5 py-3.5">
                 <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
                   {category === "character" && (
                     <div className="sm:col-span-2">
