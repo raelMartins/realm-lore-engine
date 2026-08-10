@@ -496,11 +496,11 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                         className="aspect-[5/4] w-full object-cover object-top"
                       />
                     ) : (
-                      <div className="flex h-36 w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(ellipse_at_50%_40%,rgba(15,118,110,0.12),transparent_65%)] sm:h-40">
-                        <span className="parchment-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl">
+                      <div className="flex h-24 w-full flex-col items-center justify-center gap-1.5 bg-[radial-gradient(ellipse_at_50%_40%,rgba(15,118,110,0.12),transparent_65%)]">
+                        <span className="parchment-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl">
                           <DynamicIcon
                             name={pin.iconName}
-                            className="h-7 w-7"
+                            className="h-6 w-6"
                           />
                         </span>
                         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
