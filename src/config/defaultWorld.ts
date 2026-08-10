@@ -373,7 +373,7 @@ export const defaultWorldData: CompanyLoreConfig = {
       content: {
         badge: "Secret · Easter Egg",
         description:
-          "Well met, seeker. Most wanderers pass this ridge without a second glance — but you have the curiosity of a Ravenclaw and the nerve of a Gryffindor. What you have uncovered is no ordinary trinket: a Pensieve memory, silver and swirling, of the 3D allocation engine forged in the Myxellia vaults. Tip your wand (or your cursor) into the basin below, and walk the corridors of that spatial spell as its maker once did. Mischief managed… almost. The best secrets are the ones that teach.",
+          "Well met, seeker. Most wanderers pass this ridge without a second glance — but you have the curiosity of a Ravenclaw and the nerve of a Gryffindor. What you have uncovered is no ordinary trinket: a Pensieve memory of the 3D allocation engine forged in the Myxellia vaults. Peer into the Pensieve below to walk those corridors as its maker once did. The best secrets are the ones that teach.",
         tags: ["Harry Potter", "Easter Egg", "3D Allocation", "Pensieve"],
         externalLink: {
           label: "Peer into the Pensieve",
