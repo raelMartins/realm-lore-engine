@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SecretInput } from "@/components/SecretInput";
+import { decodeGeoLabel } from "@/lib/tracking";
 
 type VisitEvent = {
   id: number;
@@ -71,7 +72,9 @@ function visitDurationLabel(visit: Visit): string | null {
 }
 
 function placeLabel(v: Visit): string {
-  const parts = [v.city, v.region, v.country].filter(Boolean);
+  const parts = [v.city, v.region, v.country]
+    .map((part) => decodeGeoLabel(part))
+    .filter((part): part is string => Boolean(part));
   if (parts.length) return parts.join(", ");
   return v.ip ? `IP ${v.ip}` : "Unknown place";
 }
@@ -236,7 +239,7 @@ export default function TrackingPage() {
 
   return (
     <main className="realm-atmosphere min-h-dvh px-4 py-8 text-realm-silver sm:px-8">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-3xl text-[15px] leading-snug tracking-normal">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-display text-[10px] uppercase tracking-[0.2em] text-realm-teal-soft">
@@ -406,7 +409,7 @@ export default function TrackingPage() {
                           className="flex min-w-0 flex-1 items-start justify-between gap-3 text-left"
                         >
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-realm-silver">
+                            <p className="text-[15px] font-semibold leading-snug text-realm-silver">
                               {placeLabel(visit)}
                               {visit.isSelf ? (
                                 <span className="ml-2 rounded-full border border-violet-300/30 bg-violet-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200">
@@ -414,7 +417,7 @@ export default function TrackingPage() {
                                 </span>
                               ) : null}
                             </p>
-                            <p className="mt-0.5 text-xs text-realm-silver-muted">
+                            <p className="mt-1 font-mono text-[11px] leading-relaxed text-realm-silver-muted tabular-nums">
                               {formatWhen(visit.startedAt)}
                               {duration ? ` · ${duration}` : ""}
                               {visit.ip ? ` · ${visit.ip}` : ""}

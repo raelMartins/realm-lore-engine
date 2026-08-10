@@ -80,6 +80,28 @@ export function clientIpFromHeaders(headers: Headers): string | null {
   return null;
 }
 
+/**
+ * Edge geo headers are sometimes percent-encoded (e.g. Mexico%20City, Concepci%C3%B3n).
+ */
+export function decodeGeoLabel(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  let current = trimmed.replace(/\+/g, ' ');
+  for (let i = 0; i < 3; i++) {
+    if (!/%[0-9A-Fa-f]{2}/.test(current)) break;
+    try {
+      const next = decodeURIComponent(current);
+      if (next === current) break;
+      current = next;
+    } catch {
+      break;
+    }
+  }
+  return current;
+}
+
 /** Best-effort geo from edge / CDN headers (no external lookup). */
 export function geoFromHeaders(headers: Headers): {
   country: string | null;
@@ -87,14 +109,13 @@ export function geoFromHeaders(headers: Headers): {
   city: string | null;
 } {
   return {
-    country:
-      headers.get('x-vercel-ip-country')?.trim() ||
-      headers.get('cf-ipcountry')?.trim() ||
-      null,
-    region:
-      headers.get('x-vercel-ip-country-region')?.trim() ||
-      headers.get('x-vercel-ip-region')?.trim() ||
-      null,
-    city: headers.get('x-vercel-ip-city')?.trim() || null,
+    country: decodeGeoLabel(
+      headers.get('x-vercel-ip-country') || headers.get('cf-ipcountry'),
+    ),
+    region: decodeGeoLabel(
+      headers.get('x-vercel-ip-country-region') ||
+        headers.get('x-vercel-ip-region'),
+    ),
+    city: decodeGeoLabel(headers.get('x-vercel-ip-city')),
   };
 }
