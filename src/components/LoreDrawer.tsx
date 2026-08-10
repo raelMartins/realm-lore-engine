@@ -486,8 +486,8 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                 </div>
 
                 <div className="parchment-scroll relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-5">
-                  {/* Hero image / icon */}
-                  <div className="relative mb-3 overflow-hidden rounded-xl border border-[rgba(90,70,45,0.22)] bg-[rgba(42,34,24,0.06)] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]">
+                  {/* Hero image / icon — shrink-0 so footers/long copy never crush it */}
+                  <div className="relative mb-3 w-full shrink-0 overflow-hidden rounded-xl border border-[rgba(90,70,45,0.22)] bg-[rgba(42,34,24,0.06)] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]">
                     {pin.category === "character" && avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -496,8 +496,8 @@ export const LoreDrawer: React.FC<LoreDrawerProps> = ({
                         className="aspect-[5/4] w-full object-cover object-top"
                       />
                     ) : (
-                      <div className="flex aspect-[5/4] w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(ellipse_at_50%_40%,rgba(15,118,110,0.12),transparent_65%)]">
-                        <span className="parchment-icon flex h-16 w-16 rounded-2xl">
+                      <div className="flex h-36 w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(ellipse_at_50%_40%,rgba(15,118,110,0.12),transparent_65%)] sm:h-40">
+                        <span className="parchment-icon flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl">
                           <DynamicIcon
                             name={pin.iconName}
                             className="h-7 w-7"
