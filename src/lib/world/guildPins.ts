@@ -341,3 +341,81 @@ export async function createGuildPin(
 
   return { ok: true, pin };
 }
+
+export type MoveGuildPinResult =
+  | { ok: true; pin: LorePin }
+  | {
+      ok: false;
+      error: string;
+      code?: PlacementError | 'unauthorized' | 'no_db' | 'not_found';
+    };
+
+/** Relocate an existing east-isle pin onto guild land. */
+export async function moveGuildPin(
+  pinId: string,
+  coordinates: { x: number; y: number },
+): Promise<MoveGuildPinResult> {
+  if (!isTursoConfigured()) {
+    return {
+      ok: false,
+      error: 'World storage is unavailable.',
+      code: 'no_db',
+    };
+  }
+
+  const id = pinId?.trim();
+  if (!id) {
+    return { ok: false, error: 'Pin id required.', code: 'not_found' };
+  }
+
+  const db = getTursoClient()!;
+  const worldId = getWorldId();
+  await ensureSchema(db);
+
+  const existing = await listGuildPins(db, worldId);
+  const current = existing.find((p) => p.id === id);
+  if (!current) {
+    return {
+      ok: false,
+      error: 'Guild pin not found on this shore.',
+      code: 'not_found',
+    };
+  }
+
+  const others = existing.filter((p) => p.id !== id);
+  const placementError = validateGuildPlacement(coordinates, others, {
+    checkSpacing: false,
+  });
+  if (placementError) {
+    return {
+      ok: false,
+      error: PLACEMENT_ERROR_MESSAGE[placementError],
+      code: placementError,
+    };
+  }
+
+  const x = Math.round(coordinates.x * 10) / 10;
+  const y = Math.round(coordinates.y * 10) / 10;
+
+  await db.execute({
+    sql: `
+      UPDATE pins
+      SET x = ?, y = ?
+      WHERE id = ? AND world_id = ? AND realm = 'company'
+    `,
+    args: [x, y, id, worldId],
+  });
+
+  await db.execute({
+    sql: `UPDATE worlds SET updated_at = datetime('now') WHERE id = ?`,
+    args: [worldId],
+  });
+
+  return {
+    ok: true,
+    pin: {
+      ...current,
+      coordinates: { x, y },
+    },
+  };
+}

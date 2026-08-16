@@ -7,7 +7,15 @@ import { LoreDrawer } from "@/components/LoreDrawer";
 import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
 import { GuildChartControls } from "@/components/GuildChartControls";
-import { ExplorationProgress } from "@/components/ExplorationProgress";
+import type { MapInteractMode } from "@/components/MapInteractToolbar";
+import {
+  MapBottomDock,
+  type MapActionBanner,
+} from "@/components/MapBottomDock";
+import {
+  MapZoomProvider,
+  type MapZoomApi,
+} from "@/components/MapZoomContext";
 import { Confetti } from "@/components/hire/Confetti";
 import { AllianceCongrats } from "@/components/hire/AllianceCongrats";
 import { CalendarModal } from "@/components/CalendarModal";
@@ -54,10 +62,6 @@ import {
   TRACK_EVENTS,
 } from "@/lib/clientTrack";
 import {
-  Volume2,
-  VolumeX,
-  Music2,
-  Music,
   Sparkles,
   CalendarDays,
   X,
@@ -77,6 +81,13 @@ export default function Home() {
 
   const [unlocked, setUnlocked] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [interactMode, setInteractMode] = useState<MapInteractMode>("explore");
+  const [moveHint, setMoveHint] = useState<string | null>(null);
+  const [unlockSignal, setUnlockSignal] = useState(0);
+  const [unlockIntent, setUnlockIntent] = useState<"move" | "chart" | null>(
+    null,
+  );
+  const [zoomApi, setZoomApi] = useState<MapZoomApi | null>(null);
   const [draft, setDraft] = useState<{
     coordinates: { x: number; y: number };
   } | null>(null);
@@ -549,12 +560,113 @@ export default function Home() {
   };
 
   const handleSelectRealm = (realm: RealmSide) => {
-    if (placing || hireBusy) return;
+    if (placing || hireBusy || interactMode === "move") return;
     soundFx.playHoverSound();
     setSelectedPin(null);
     setSelectedRealm(realm);
     track(TRACK_EVENTS.realmOpen, { realm });
   };
+
+  const handleInteractModeChange = (mode: MapInteractMode) => {
+    if (hireBusy) return;
+    setMoveHint(null);
+    if (mode === "move") {
+      setPlacing(false);
+      setDraft(null);
+      setPlaceHint(null);
+      setSelectedPin(null);
+      setSelectedRealm(null);
+    } else {
+      setPlacing(false);
+      setPlaceHint(null);
+    }
+    setInteractMode(mode);
+    soundFx.playSelectSound();
+  };
+
+  const handlePinMoveEnd = async (
+    pinId: string,
+    coords: { x: number; y: number },
+  ) => {
+    setMoveHint(null);
+    const previous = worldData;
+    setWorldData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        pins: prev.pins.map((p) =>
+          p.id === pinId
+            ? { ...p, coordinates: { x: coords.x, y: coords.y } }
+            : p,
+        ),
+      };
+    });
+
+    try {
+      const res = await fetch("/api/world/pins", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: pinId, coordinates: coords }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        pin?: LorePin;
+      };
+      if (!res.ok) {
+        setWorldData(previous);
+        setMoveHint(json.error || PLACEMENT_ERROR_MESSAGE.off_land);
+        soundFx.playHoverSound();
+        return false;
+      }
+      if (json.pin) {
+        setWorldData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            pins: prev.pins.map((p) => (p.id === pinId ? json.pin! : p)),
+          };
+        });
+      }
+      soundFx.playSelectSound();
+      return true;
+    } catch {
+      setWorldData(previous);
+      setMoveHint("Could not save pin position.");
+      soundFx.playHoverSound();
+      return false;
+    }
+  };
+
+  const handlePinMoveReject = () => {
+    setMoveHint(PLACEMENT_ERROR_MESSAGE.off_land);
+    soundFx.playHoverSound();
+  };
+
+  const actionBanner = useMemo((): MapActionBanner | null => {
+    if (placing) {
+      return {
+        title: "Placement mode",
+        body: "Click Guild Shore land to place a marker.",
+        hint: placeHint,
+        onCancel: () => {
+          setPlacing(false);
+          setPlaceHint(null);
+        },
+      };
+    }
+    if (interactMode === "move") {
+      return {
+        title: "Move mode",
+        body: "Drag guild pins. Drop only on Guild Shore land.",
+        hint: moveHint,
+        onCancel: () => {
+          setInteractMode("explore");
+          setMoveHint(null);
+        },
+      };
+    }
+    return null;
+  }, [placing, placeHint, interactMode, moveHint]);
 
   const handleToggleMute = () => {
     const muted = soundFx.toggleMute();
@@ -629,6 +741,7 @@ export default function Home() {
   }
 
   return (
+    <MapZoomProvider api={zoomApi}>
     <main
       className={`realm-atmosphere relative h-dvh w-full overflow-hidden ${
         unitedState.united || allianceForged ? "realm-united" : ""
@@ -751,52 +864,43 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute z-30 hud-safe-bl">
-        <div className="pointer-events-auto flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleToggleMute}
-            className="glass-panel glass-btn hud-compact-icon rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
-            title={isMuted ? "Unmute sound effects" : "Mute sound effects"}
-          >
-            {isMuted ? (
-              <VolumeX className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void handleToggleMusic()}
-            className="glass-panel glass-btn hud-compact-icon rounded-full p-2.5 text-realm-mist hover:text-realm-silver"
-            title={musicOn ? "Mute music" : "Play music"}
-          >
-            {musicOn ? (
-              <Music2 className="h-4 w-4" />
-            ) : (
-              <Music className="h-4 w-4 opacity-50" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute left-1/2 z-30 w-[min(100%-2rem,280px)] -translate-x-1/2 hud-safe-bc">
-        <ExplorationProgress
-          explored={exploration.explored}
-          total={exploration.total}
-          onClear={() => {
-            clearExploredPinIds(worldId);
-            clearRevealedSecrets(worldId);
-            setExploredIds(new Set());
-            setRevealedSecrets(new Set());
-            setSelectedPin((prev) =>
-              prev && isSecretPin(prev) ? null : prev,
-            );
-            soundFx.playSelectSound();
-          }}
-        />
-      </div>
+      <MapBottomDock
+        explored={exploration.explored}
+        total={exploration.total}
+        onClearExploration={() => {
+          clearExploredPinIds(worldId);
+          clearRevealedSecrets(worldId);
+          setExploredIds(new Set());
+          setRevealedSecrets(new Set());
+          setSelectedPin((prev) =>
+            prev && isSecretPin(prev) ? null : prev,
+          );
+          soundFx.playSelectSound();
+        }}
+        mode={interactMode}
+        onModeChange={handleInteractModeChange}
+        guildEnabled={unlocked}
+        onRequestUnlock={(intent) => {
+          setUnlockIntent(intent);
+          setUnlockSignal((n) => n + 1);
+        }}
+        onChartPin={() => {
+          setInteractMode("explore");
+          setMoveHint(null);
+          setSelectedPin(null);
+          setSelectedRealm(null);
+          setPlaceHint(null);
+          setPlacing(true);
+          soundFx.playSelectSound();
+        }}
+        chartActive={placing}
+        isMuted={isMuted}
+        musicOn={musicOn}
+        onToggleMute={handleToggleMute}
+        onToggleMusic={() => void handleToggleMusic()}
+        disabled={hireBusy}
+        actionBanner={actionBanner}
+      />
 
       <MapCanvas
         data={displayData}
@@ -807,6 +911,10 @@ export default function Home() {
         mapImageUrl="/maps/realm-map.png"
         placementMode={placing}
         onPlaceAttempt={handlePlaceAttempt}
+        pinMoveMode={interactMode === "move"}
+        onPinMoveEnd={handlePinMoveEnd}
+        onPinMoveReject={handlePinMoveReject}
+        onZoomApiReady={setZoomApi}
         spawnPinId={spawnPinId}
         united={unitedState.united}
         exitPinId={exitPinId}
@@ -830,9 +938,29 @@ export default function Home() {
 
       <GuildChartControls
         unlocked={unlocked}
-        onUnlocked={() => setUnlocked(true)}
+        onUnlocked={() => {
+          setUnlocked(true);
+          const intent = unlockIntent;
+          setUnlockIntent(null);
+          setSelectedPin(null);
+          setSelectedRealm(null);
+          setMoveHint(null);
+          setPlaceHint(null);
+          setDraft(null);
+          if (intent === "move") {
+            setPlacing(false);
+            setInteractMode("move");
+          } else if (intent === "chart") {
+            setInteractMode("explore");
+            setPlacing(true);
+          }
+        }}
+        unlockSignal={unlockSignal}
         placing={placing}
+        moveMode={interactMode === "move"}
         onStartPlace={() => {
+          setInteractMode("explore");
+          setMoveHint(null);
           setSelectedPin(null);
           setSelectedRealm(null);
           setPlaceHint(null);
@@ -889,5 +1017,6 @@ export default function Home() {
       />
       </div>
     </main>
+    </MapZoomProvider>
   );
 }

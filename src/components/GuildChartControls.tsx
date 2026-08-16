@@ -3,8 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  KeyRound,
-  MapPinPlus,
   X,
   Loader2,
   Plus,
@@ -30,7 +28,11 @@ export type ChartDraft = {
 interface GuildChartControlsProps {
   unlocked: boolean;
   onUnlocked: () => void;
+  /** Increment to open the unlock dialog (e.g. from Move tool while locked). */
+  unlockSignal?: number;
   placing: boolean;
+  /** When true, chart FAB is hidden (move mode owns the shore). */
+  moveMode?: boolean;
   onStartPlace: () => void;
   onCancelPlace: () => void;
   draft: ChartDraft | null;
@@ -206,7 +208,9 @@ function StatEditor({
 export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
   unlocked,
   onUnlocked,
+  unlockSignal = 0,
   placing,
+  moveMode = false,
   onStartPlace,
   onCancelPlace,
   draft,
@@ -216,6 +220,14 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
   guildCharacters = [],
 }) => {
   const [showUnlock, setShowUnlock] = useState(false);
+  const lastUnlockSignal = React.useRef(0);
+
+  useEffect(() => {
+    if (unlockSignal > lastUnlockSignal.current && !unlocked) {
+      setShowUnlock(true);
+    }
+    lastUnlockSignal.current = unlockSignal;
+  }, [unlockSignal, unlocked]);
   const [passphrase, setPassphrase] = useState("");
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [unlocking, setUnlocking] = useState(false);
@@ -443,45 +455,6 @@ export const GuildChartControls: React.FC<GuildChartControlsProps> = ({
 
   return (
     <>
-      <div className="pointer-events-auto absolute z-30 flex flex-col gap-2 hud-safe-b right-[calc(5.5rem+env(safe-area-inset-right,0px))] max-[500px]:right-[calc(4.75rem+env(safe-area-inset-right,0px))]">
-        {!unlocked ? (
-          <button
-            type="button"
-            onClick={() => setShowUnlock(true)}
-            className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver"
-          >
-            <KeyRound className="h-4 w-4 text-amber-200/80" />
-            <span className="hud-pill-label">Unlock guild chart</span>
-          </button>
-        ) : !placing && !draft ? (
-          <button
-            type="button"
-            onClick={onStartPlace}
-            className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver"
-          >
-            <MapPinPlus className="h-4 w-4 text-teal-300" />
-            <span className="hud-pill-label">Chart a pin</span>
-          </button>
-        ) : placing ? (
-          <div className="glass-panel-strong max-w-[220px] rounded-2xl px-3.5 py-3 text-xs text-realm-mist">
-            <p className="font-semibold text-realm-silver">Placement mode</p>
-            <p className="mt-1 leading-snug text-realm-silver-muted">
-              Click Guild Shore land to place a marker.
-            </p>
-            {placeHint && (
-              <p className="mt-2 text-amber-200/90">{placeHint}</p>
-            )}
-            <button
-              type="button"
-              onClick={onCancelPlace}
-              className="mt-3 text-[11px] uppercase tracking-wider text-realm-teal-soft hover:text-realm-silver"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : null}
-      </div>
-
       <AnimatePresence>
         {showUnlock && (
           <>

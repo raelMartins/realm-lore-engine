@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -8,7 +8,6 @@ import {
 } from "react-zoom-pan-pinch";
 import { CompanyLoreConfig, LorePin } from "@/types/world";
 import * as Icons from "lucide-react";
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { soundFx } from "@/lib/audio";
 import {
   RealmHitLayer,
@@ -16,6 +15,7 @@ import {
   type RealmColorPhase,
 } from "@/components/RealmHitLayer";
 import { AllianceTransferTrails } from "@/components/hire/AllianceTransferTrails";
+import { MapZoomBridge, type MapZoomApi } from "@/components/MapZoomContext";
 import {
   MAP_STAGE_SIZE_STYLE,
   SHOW_MAP_CALIBRATION,
@@ -23,6 +23,10 @@ import {
 import { RealmSide } from "@/types/world";
 import { getAvatarById } from "@/config/avatars";
 import type { HireMotion } from "@/lib/hire";
+import { isOnGuildLand } from "@/lib/world/placement";
+import type { MapInteractMode } from "@/components/MapInteractToolbar";
+
+export type { MapInteractMode };
 
 const PHONE_MIN_EDGE = 768;
 
@@ -68,6 +72,17 @@ interface MapCanvasProps {
   /** When true, clicks on the map stage pick guild placement coords. */
   placementMode?: boolean;
   onPlaceAttempt?: (coords: { x: number; y: number }) => void;
+  /** When true, guild pins can be dragged within shore land. */
+  pinMoveMode?: boolean;
+  /** Commit a guild pin relocation (return false to revert). */
+  onPinMoveEnd?: (
+    pinId: string,
+    coords: { x: number; y: number },
+  ) => void | Promise<boolean | void>;
+  /** Drop rejected (e.g. off land) — parent may show a hint. */
+  onPinMoveReject?: (reason: "off_land") => void;
+  /** Receives zoom API once TransformWrapper is ready. */
+  onZoomApiReady?: (api: MapZoomApi) => void;
   /** Briefly animate this pin id after creation. */
   spawnPinId?: string | null;
   /** Shared alliance look across both isles. */
@@ -98,40 +113,6 @@ interface MapCanvasProps {
   exploredPinIds?: Set<string>;
 }
 
-const CanvasControls = () => {
-  const { zoomIn, zoomOut, resetTransform } = useControls();
-
-  return (
-    <div className="glass-panel pointer-events-auto absolute z-30 flex flex-col gap-1.5 rounded-2xl p-1.5 hud-safe-br">
-      <button
-        type="button"
-        onClick={() => zoomIn()}
-        className="glass-btn hud-compact-icon rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
-        title="Zoom In"
-      >
-        <ZoomIn className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => zoomOut()}
-        className="glass-btn hud-compact-icon rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
-        title="Zoom Out"
-      >
-        <ZoomOut className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => resetTransform(400, "easeOut")}
-        className="glass-btn hud-compact-icon rounded-xl p-2.5 text-realm-mist hover:text-realm-silver"
-        title="Reset Map View"
-      >
-        <RotateCcw className="h-5 w-5" />
-      </button>
-    </div>
-  );
-};
-
-/** Invisible focus targets for zoomToElement — sized to each island. */
 const RealmFocusTargets = () => (
   <>
     <div
@@ -429,6 +410,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
   mapImageUrl,
   placementMode = false,
   onPlaceAttempt,
+  pinMoveMode = false,
+  onPinMoveEnd,
+  onPinMoveReject,
+  onZoomApiReady,
   spawnPinId = null,
   united = false,
   exitPinId = null,
@@ -451,6 +436,106 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
   } | null>(null);
   const [hoveredRealm, setHoveredRealm] = useState<RealmSide | null>(null);
   const [scales, setScales] = useState({ initial: 1, min: 1 });
+  const [dragState, setDragState] = useState<{
+    id: string;
+    x: number;
+    y: number;
+    valid: boolean;
+    moved: boolean;
+    originX: number;
+    originY: number;
+  } | null>(null);
+  const dragStateRef = useRef(dragState);
+  dragStateRef.current = dragState;
+  const stageLock = placementMode || hireBusy || pinMoveMode;
+  const moveHandlersRef = useRef({
+    onSelectPin,
+    onPinMoveEnd,
+    onPinMoveReject,
+    hireBusy,
+    placementMode,
+    pins: data.pins,
+  });
+  moveHandlersRef.current = {
+    onSelectPin,
+    onPinMoveEnd,
+    onPinMoveReject,
+    hireBusy,
+    placementMode,
+    pins: data.pins,
+  };
+
+  const clientToStagePercent = (clientX: number, clientY: number) => {
+    const stage = document.querySelector(
+      "[data-map-stage]",
+    ) as HTMLElement | null;
+    if (!stage) return null;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    return {
+      x: ((clientX - rect.left) / rect.width) * 100,
+      y: ((clientY - rect.top) / rect.height) * 100,
+    };
+  };
+
+  const endPinDrag = () => {
+    const current = dragStateRef.current;
+    setDragState(null);
+    if (!current) return;
+    const handlers = moveHandlersRef.current;
+
+    if (!current.moved) {
+      const pin = handlers.pins.find((p) => p.id === current.id);
+      if (pin && !handlers.hireBusy && !handlers.placementMode) {
+        handlers.onSelectPin(pin);
+      }
+      return;
+    }
+
+    if (!current.valid) {
+      handlers.onPinMoveReject?.("off_land");
+      return;
+    }
+
+    void handlers.onPinMoveEnd?.(current.id, { x: current.x, y: current.y });
+  };
+
+  useEffect(() => {
+    if (!pinMoveMode) setDragState(null);
+  }, [pinMoveMode]);
+
+  useEffect(() => {
+    if (!dragState) return;
+
+    const onMove = (e: PointerEvent) => {
+      const current = dragStateRef.current;
+      if (!current) return;
+      const next = clientToStagePercent(e.clientX, e.clientY);
+      if (!next) return;
+      const dist = Math.hypot(
+        next.x - current.originX,
+        next.y - current.originY,
+      );
+      setDragState({
+        ...current,
+        x: Math.round(next.x * 10) / 10,
+        y: Math.round(next.y * 10) / 10,
+        valid: isOnGuildLand(next),
+        moved: current.moved || dist > 0.6,
+      });
+    };
+
+    const onUp = () => endPinDrag();
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [dragState?.id]);
 
   useEffect(() => {
     const update = () => {
@@ -494,7 +579,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
         disablePadding={false}
         doubleClick={{ disabled: true }}
         panning={{
-          disabled: placementMode || hireBusy,
+          disabled: stageLock,
           // Pins stay excluded so a press can click; realm land must pan.
           excluded: ["button"],
         }}
@@ -502,7 +587,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
       >
         {() => (
           <>
-            <CanvasControls />
+            <MapZoomBridge onReady={onZoomApiReady} />
             <MapFocusController
               selectedRealm={selectedRealm}
               cameraCommand={cameraCommand}
@@ -512,9 +597,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
               wrapperClass={`!flex !h-full !w-full !items-center !justify-center ${
                 placementMode
                   ? "cursor-crosshair"
-                  : hireBusy
+                  : pinMoveMode
                     ? "cursor-default"
-                    : "cursor-grab active:cursor-grabbing"
+                    : hireBusy
+                      ? "cursor-default"
+                      : "cursor-grab active:cursor-grabbing"
               }`}
               contentClass="!w-auto !h-auto"
             >
@@ -526,9 +613,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                 className={`relative overflow-hidden bg-[#1a1410] shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] ${
                   placementMode
                     ? "cursor-crosshair"
-                    : hireBusy
+                    : pinMoveMode
                       ? "cursor-default"
-                      : "cursor-grab active:cursor-grabbing"
+                      : hireBusy
+                        ? "cursor-default"
+                        : "cursor-grab active:cursor-grabbing"
                 }`}
                 style={MAP_STAGE_SIZE_STYLE}
                 data-map-stage
@@ -563,7 +652,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                 {/* Island hit regions — above map art, below pin buttons */}
                 <div
                   className={`absolute inset-0 z-[1] ${
-                    placementMode ? "pointer-events-none" : ""
+                    placementMode || pinMoveMode ? "pointer-events-none" : ""
                   }`}
                 >
                   <RealmHitLayer
@@ -655,6 +744,20 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                       isVeiled: isVeiledSecret,
                       isSecret,
                     });
+                    const isDragging = dragState?.id === pin.id;
+                    const pinX = isDragging
+                      ? dragState.x
+                      : pin.coordinates.x;
+                    const pinY = isDragging
+                      ? dragState.y
+                      : pin.coordinates.y;
+                    const canDragPin =
+                      pinMoveMode &&
+                      isCompany &&
+                      !hireBusy &&
+                      !placementMode &&
+                      !isHidden &&
+                      !isVeiledSecret;
 
                     return (
                       <button
@@ -672,10 +775,39 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                             e.stopPropagation();
                             return;
                           }
+                          if (pinMoveMode && isCompany) {
+                            e.stopPropagation();
+                            return;
+                          }
                           onSelectPin(pin);
                         }}
+                        onPointerDown={(e) => {
+                          if (!canDragPin) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setHoverTip(null);
+                          const start =
+                            clientToStagePercent(e.clientX, e.clientY) ?? {
+                              x: pin.coordinates.x,
+                              y: pin.coordinates.y,
+                            };
+                          setDragState({
+                            id: pin.id,
+                            x: pin.coordinates.x,
+                            y: pin.coordinates.y,
+                            originX: start.x,
+                            originY: start.y,
+                            valid: true,
+                            moved: false,
+                          });
+                        }}
                         onMouseEnter={(e) => {
-                          if (!placementMode && !hireBusy && !isHidden) {
+                          if (
+                            !placementMode &&
+                            !hireBusy &&
+                            !isHidden &&
+                            !dragState
+                          ) {
                             soundFx.playHoverSound();
                             const rect = e.currentTarget.getBoundingClientRect();
                             setHoverTip({
@@ -690,18 +822,43 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                           );
                         }}
                         style={{
-                          left: `${pin.coordinates.x}%`,
-                          top: `${pin.coordinates.y}%`,
-                          opacity: isHidden ? 0 : isVeiledSecret ? 0.35 : 1,
+                          left: `${pinX}%`,
+                          top: `${pinY}%`,
+                          opacity: isHidden
+                            ? 0
+                            : isDragging && !dragState.valid
+                              ? 0.55
+                              : isVeiledSecret
+                                ? 0.35
+                                : 1,
                         }}
-                        className={`map-pin-hit group pointer-events-auto absolute origin-bottom -translate-x-1/2 -translate-y-full cursor-pointer focus:outline-none hover:z-[70] ${
-                          isSelected ? "z-50 scale-125" : "z-10 hover:scale-110"
-                        } ${isExiting || isEntering || isHidden || hireBusy || placementMode ? "" : "transition-[transform,opacity] duration-300"} ${
+                        className={`map-pin-hit group pointer-events-auto absolute origin-bottom -translate-x-1/2 -translate-y-full focus:outline-none hover:z-[70] ${
+                          canDragPin
+                            ? "cursor-grab active:cursor-grabbing"
+                            : "cursor-pointer"
+                        } ${
+                          isSelected || isDragging
+                            ? "z-50 scale-125"
+                            : "z-10 hover:scale-110"
+                        } ${
+                          isExiting ||
+                          isEntering ||
+                          isHidden ||
+                          hireBusy ||
+                          placementMode ||
+                          isDragging
+                            ? ""
+                            : "transition-[transform,opacity] duration-300"
+                        } ${
                           placementMode || hireBusy || isHidden
                             ? "pointer-events-none"
                             : ""
                         } ${isVeiledSecret ? "z-[3]" : ""} ${
                           hoverTip?.id === pin.id ? "z-[70]" : ""
+                        } ${
+                          isDragging && !dragState.valid
+                            ? "brightness-75 saturate-50"
+                            : ""
                         }`}
                         aria-hidden={isHidden}
                         aria-label={
@@ -780,7 +937,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                           )}
                         </MapMarkerPin>
 
-                        {!isVeiledSecret && hoverTip?.id === pin.id && (
+                        {!isVeiledSecret &&
+                          hoverTip?.id === pin.id &&
+                          !isDragging && (
                         <div
                           className={`pointer-events-none absolute left-1/2 z-[80] -translate-x-1/2 ${
                             hoverTip.below
