@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import type { MapInteractMode } from "@/components/MapInteractToolbar";
 import { useMapZoom } from "@/components/MapZoomContext";
+import { CommandPalette } from "@/components/CommandPalette";
+import type { LorePin } from "@/types/world";
 
 export type MapActionBanner = {
   title: string;
@@ -43,6 +45,14 @@ interface MapBottomDockProps {
   onToggleMusic: () => void;
   disabled?: boolean;
   actionBanner?: MapActionBanner | null;
+  /** Search lore pins from the dock. */
+  searchPins?: LorePin[];
+  onSearchSelectPin?: (pin: LorePin) => void;
+  onSearchOpen?: () => void;
+  realmLabels?: {
+    adventurer?: string;
+    company?: string;
+  };
 }
 
 /**
@@ -65,6 +75,10 @@ export function MapBottomDock({
   onToggleMusic,
   disabled = false,
   actionBanner = null,
+  searchPins = [],
+  onSearchSelectPin,
+  onSearchOpen,
+  realmLabels,
 }: MapBottomDockProps) {
   const zoom = useMapZoom();
 
@@ -100,7 +114,7 @@ export function MapBottomDock({
   };
 
   return (
-    <div className="pointer-events-none absolute left-1/2 z-30 flex w-[min(100%-1.25rem,42rem)] -translate-x-1/2 flex-col items-stretch gap-2 hud-safe-bc">
+    <div className="pointer-events-none absolute left-1/2 z-30 flex w-[min(100%-1.25rem,46rem)] -translate-x-1/2 flex-col items-stretch gap-2 hud-safe-bc">
       {actionBanner && (
         <div className="glass-panel-strong pointer-events-auto rounded-2xl px-3.5 py-2.5 text-[11px] leading-snug text-realm-mist">
           <div className="flex items-start justify-between gap-3">
@@ -133,11 +147,11 @@ export function MapBottomDock({
         role="group"
         aria-label="Map tools and exploration"
       >
-        {/* Audio */}
+        {/* Audio + search */}
         <div
           className="flex shrink-0 items-center gap-0.5 pl-0.5"
           role="toolbar"
-          aria-label="Audio"
+          aria-label="Audio and search"
         >
           <button
             type="button"
@@ -165,6 +179,16 @@ export function MapBottomDock({
               <Music className="h-4 w-4 opacity-50" />
             )}
           </button>
+          {onSearchSelectPin && (
+            <CommandPalette
+              variant="icon"
+              pins={searchPins}
+              onSelectPin={onSearchSelectPin}
+              onOpen={onSearchOpen}
+              realmLabels={realmLabels}
+              disabled={disabled}
+            />
+          )}
         </div>
 
         <div className="h-7 w-px shrink-0 bg-white/15" aria-hidden />

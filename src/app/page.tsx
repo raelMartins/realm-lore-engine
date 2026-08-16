@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getCompanyData } from "@/lib/getCompanyData";
 import { MapCanvas, type CameraCommand, type CameraCommandInput } from "@/components/MapCanvas";
 import { LoreDrawer } from "@/components/LoreDrawer";
-import { CommandPalette } from "@/components/CommandPalette";
 import { RealmOverview } from "@/components/RealmOverview";
 import { GuildChartControls } from "@/components/GuildChartControls";
 import type { MapInteractMode } from "@/components/MapInteractToolbar";
@@ -61,11 +60,6 @@ import {
   track,
   TRACK_EVENTS,
 } from "@/lib/clientTrack";
-import {
-  Sparkles,
-  CalendarDays,
-  X,
-} from "lucide-react";
 
 type WorldApiResponse = CompanyLoreConfig & {
   _meta?: { source: string; worldId: string };
@@ -786,83 +780,6 @@ export default function Home() {
           aria-hidden
         />
       )}
-      <div className="pointer-events-none absolute z-30 hud-safe-tl">
-        <div className="pointer-events-auto">
-          <CommandPalette
-            pins={listPins}
-            onSelectPin={handleSelectPin}
-            onOpen={() => track(TRACK_EVENTS.searchOpen)}
-            realmLabels={displayData.realmLabels}
-          />
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2 hud-safe-tc">
-        <div className="pointer-events-auto flex items-center gap-2">
-          {!allianceForged ? (
-            <button
-              type="button"
-              onClick={handleHire}
-              disabled={hireBusy}
-              className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
-              title="Forge alliance"
-            >
-              <Sparkles className="h-4 w-4 text-amber-200/90" />
-              <span className="hud-pill-label">
-                {hireBusy ? "Crossing…" : "Forge Alliance"}
-              </span>
-            </button>
-          ) : (
-            <>
-              {schedulingUrl ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCalendarOpen(true);
-                    track(TRACK_EVENTS.calendarOpen, { source: "hud" });
-                  }}
-                  disabled={hireBusy}
-                  className="glass-panel glass-btn hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist hover:text-realm-silver disabled:opacity-50"
-                  title="Chart a meeting"
-                >
-                  <CalendarDays className="h-4 w-4 text-amber-200/90" />
-                  <span className="hud-pill-label">Chart a meeting</span>
-                </button>
-              ) : (
-                <div className="glass-panel hud-compact-pill flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide text-realm-mist">
-                  <Sparkles className="h-4 w-4 text-teal-300" />
-                  <span className="hud-pill-label">Alliance Forged</span>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => void unforgeAlliance()}
-                disabled={hireBusy}
-                className="glass-panel glass-btn hud-compact-icon rounded-full p-2.5 text-realm-mist hover:text-realm-silver disabled:opacity-50"
-                title="Unforge alliance"
-                aria-label="Unforge alliance"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute z-30 hud-safe-tr">
-        <div className="glass-panel pointer-events-auto hidden items-center gap-2.5 rounded-full px-3.5 py-2 text-xs text-realm-mist sm:flex">
-          <span
-            className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse ${
-              allianceForged ? "bg-teal-300" : "bg-violet-300"
-            }`}
-          />
-          <span className="font-semibold tracking-wide text-realm-silver">
-            {allianceForged
-              ? `${displayData.companyName} · Allied`
-              : displayData.companyName}
-          </span>
-        </div>
-      </div>
 
       <MapBottomDock
         explored={exploration.explored}
@@ -900,6 +817,10 @@ export default function Home() {
         onToggleMusic={() => void handleToggleMusic()}
         disabled={hireBusy}
         actionBanner={actionBanner}
+        searchPins={listPins}
+        onSearchSelectPin={handleSelectPin}
+        onSearchOpen={() => track(TRACK_EVENTS.searchOpen)}
+        realmLabels={displayData.realmLabels}
       />
 
       <MapCanvas
@@ -915,6 +836,14 @@ export default function Home() {
         onPinMoveEnd={handlePinMoveEnd}
         onPinMoveReject={handlePinMoveReject}
         onZoomApiReady={setZoomApi}
+        allianceForged={allianceForged}
+        schedulingUrl={schedulingUrl}
+        onForgeAlliance={handleHire}
+        onUnforgeAlliance={() => void unforgeAlliance()}
+        onOpenCalendar={() => {
+          setCalendarOpen(true);
+          track(TRACK_EVENTS.calendarOpen, { source: "channel" });
+        }}
         spawnPinId={spawnPinId}
         united={unitedState.united}
         exitPinId={exitPinId}

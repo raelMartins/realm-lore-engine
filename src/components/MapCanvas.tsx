@@ -15,6 +15,7 @@ import {
   type RealmColorPhase,
 } from "@/components/RealmHitLayer";
 import { AllianceTransferTrails } from "@/components/hire/AllianceTransferTrails";
+import { AllianceChannelBeacon } from "@/components/hire/AllianceChannelBeacon";
 import { MapZoomBridge, type MapZoomApi } from "@/components/MapZoomContext";
 import {
   MAP_STAGE_SIZE_STYLE,
@@ -83,6 +84,12 @@ interface MapCanvasProps {
   onPinMoveReject?: (reason: "off_land") => void;
   /** Receives zoom API once TransformWrapper is ready. */
   onZoomApiReady?: (api: MapZoomApi) => void;
+  /** Mid-channel alliance CTA (map-anchored). */
+  allianceForged?: boolean;
+  schedulingUrl?: string | null;
+  onForgeAlliance?: () => void;
+  onUnforgeAlliance?: () => void;
+  onOpenCalendar?: () => void;
   /** Briefly animate this pin id after creation. */
   spawnPinId?: string | null;
   /** Shared alliance look across both isles. */
@@ -414,6 +421,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
   onPinMoveEnd,
   onPinMoveReject,
   onZoomApiReady,
+  allianceForged = false,
+  schedulingUrl = null,
+  onForgeAlliance,
+  onUnforgeAlliance,
+  onOpenCalendar,
   spawnPinId = null,
   united = false,
   exitPinId = null,
@@ -670,6 +682,17 @@ export const MapCanvas: React.FC<MapCanvasProps> = React.memo(({
                   retreating={trailsRetreating}
                   spanMs={trailSpanMs}
                 />
+
+                {onForgeAlliance && onUnforgeAlliance && onOpenCalendar && (
+                  <AllianceChannelBeacon
+                    forged={allianceForged}
+                    busy={hireBusy}
+                    schedulingUrl={schedulingUrl}
+                    onForge={onForgeAlliance}
+                    onUnforge={onUnforgeAlliance}
+                    onOpenCalendar={onOpenCalendar}
+                  />
+                )}
 
                 {(united ||
                   realmColorPhase === "aligning" ||
